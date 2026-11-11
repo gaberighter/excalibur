@@ -1,0 +1,5 @@
+/* Layout only. Colours, fonts and spacing come from the active theme (D11). */
+html,
+body {
+  margin: 0;
+}
