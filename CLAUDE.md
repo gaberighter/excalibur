@@ -18,14 +18,14 @@ cargo clippy --workspace
 cargo fmt --all
 ```
 
-Layout: a Cargo workspace with two members, `src-tauri/` (the app; package `stats_gui`, library `stats_gui_lib`) and `stats-probe/` (the helper). The frontend is static files in `ui/`, served directly by Tauri with no build step.
+Layout: a Cargo workspace with two members, `src-tauri/` (the app; package `excalibur`, library `excalibur_lib`) and `stats-probe/` (the helper). The frontend is static files in `ui/`, served directly by Tauri with no build step.
 
-The project is a small floating desktop window for macOS (Apple Silicon first) that shows system metrics: CPU, memory, storage, temperature, network and GPU.
+The project, Excalibur, is a small floating desktop window for macOS (Apple Silicon first) that shows system metrics: CPU, memory, storage, temperature, network and GPU. Its working name was `stats_gui`, which is still the name of the local folder (D42).
 
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D41) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D42) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -51,7 +51,7 @@ Plugin model (D14–D18, D26–D28, D31, D33–D34):
 
 Themes (D11, D19, D30): a folder with `theme.css` (colours, fonts, spacing) and `theme.toml` (native blur effect, corner radius, default width). The app's base stylesheet holds layout only; no colours or window styling belong in app code.
 
-File locations (D20, D21, D35): built-in plugins and the default theme ship inside the app bundle. User files live in `~/.config/stats_gui/` (`config.toml`, `plugins/`, `themes/`). A user plugin or theme with the same name as a built-in replaces it. `config.toml` is optional and the app must run on defaults without it. The app never edits `config.toml`; the theme chosen from the menu goes in `state.toml` in the same folder, which takes precedence (D40).
+File locations (D20, D21, D35): built-in plugins and the default theme ship inside the app bundle. User files live in `~/.config/excalibur/` (`config.toml`, `plugins/`, `themes/`). A user plugin or theme with the same name as a built-in replaces it. `config.toml` is optional and the app must run on defaults without it. The app never edits `config.toml`; the theme chosen from the menu goes in `state.toml` in the same folder, which takes precedence (D40).
 
 Command lookup (D38): a bare `command` name in a manifest is resolved in the plugin's own folder, then beside the bundled helper, then on `PATH`.
 

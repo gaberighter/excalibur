@@ -1,15 +1,15 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "stats_gui",
+  "productName": "Excalibur",
   "version": "0.1.0",
-  "identifier": "com.gaberighter.statsgui",
+  "identifier": "com.gaberighter.excalibur",
   "build": {
     "frontendDist": "../ui"
   },
   "app": {
     "windows": [
       {
-        "title": "stats_gui",
+        "title": "Excalibur",
         "width": 800,
         "height": 600,
         "resizable": true,

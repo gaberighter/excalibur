@@ -48,7 +48,7 @@ Temperature and GPU have no official public API on Apple Silicon. The app tries 
 - **Plugin-controlled display.** A plugin chooses whether it is shown as a value only or as a value with a sparkline.
 - **Themes.** Themes are drop-in in the same way: a folder with a stylesheet and a settings file.
 - **Refresh rate.** A global default of 1–2 seconds, which individual plugins can override.
-- **One place for my own files.** Config, plugins and themes live in `~/.config/stats_gui`. Built-in plugins and the default theme ship inside the app and can be overridden or disabled from there.
+- **One place for my own files.** Config, plugins and themes live in `~/.config/excalibur`. Built-in plugins and the default theme ship inside the app and can be overridden or disabled from there.
 
 ### Maintainability and installation
 

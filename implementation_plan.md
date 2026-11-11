@@ -77,7 +77,7 @@ The core of the app, written as plain Rust modules that can be tested without a 
 | Part | Responsibility | Decisions |
 |---|---|---|
 | Manifest | Parse and validate `plugin.toml`; reject bad manifests with a clear message | D26, D34, O17 |
-| Config | Load `~/.config/stats_gui/config.toml`; run on defaults if it is missing or invalid | D20, D35 |
+| Config | Load `~/.config/excalibur/config.toml`; run on defaults if it is missing or invalid | D20, D35 |
 | Discovery | Find plugins in the app bundle and the user folder; user folder wins by name; apply `disabled` and ordering | D21, D35 |
 | Command resolution | Resolve a manifest's `command`: plugin folder, then bundled helper, then `PATH` | D38 |
 | Runner | Launch the executable, capture stdout, parse the D27 object; non-zero exit or bad output means unavailable | D15, D27 |
@@ -133,8 +133,8 @@ Tests, using small shell scripts as fake plugins:
 - Borderless window with a drag region covering the body (D23).
 - Hidden from the Dock and the app switcher (D23).
 - Right-click menu: switch theme (listing discovered themes), reload plugins, open config folder, quit (D24).
-- "Open config folder" creates `~/.config/stats_gui/` if it does not exist, with empty `plugins/` and `themes/` folders and a `config.toml` in which every setting is commented out and shows its default. An existing `config.toml` is never overwritten (D41).
-- The chosen theme is remembered in `~/.config/stats_gui/state.toml`, which takes precedence over `theme` in `config.toml`. The app never writes `config.toml` otherwise (D40).
+- "Open config folder" creates `~/.config/excalibur/` if it does not exist, with empty `plugins/` and `themes/` folders and a `config.toml` in which every setting is commented out and shows its default. An existing `config.toml` is never overwritten (D41).
+- The chosen theme is remembered in `~/.config/excalibur/state.toml`, which takes precedence over `theme` in `config.toml`. The app never writes `config.toml` otherwise (D40).
 
 **Done when:** the app can be moved, re-themed, reloaded and quit using only the window itself, the chosen theme survives a restart, and `config.toml` is byte-for-byte unchanged after a theme switch.
 

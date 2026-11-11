@@ -27,7 +27,7 @@ All entries below were decided on 2026-11-11.
 | D17 | Presentations | Value only, or value with sparkline |
 | D18 | Refresh rate setting | Global default with per-plugin override |
 | D19 | Theme format | Folder with a stylesheet and a settings file |
-| D20 | File layout | `~/.config/stats_gui` |
+| D20 | File layout | `~/.config/excalibur` |
 | D21 | Built-in delivery | Built-ins ship in the app bundle; the user folder overrides them |
 | D22 | Built-in implementation | One Rust helper binary with a subcommand per metric |
 | D23 | Window behaviour | Borderless, hidden from the Dock |
@@ -49,6 +49,7 @@ All entries below were decided on 2026-11-11.
 | D39 | Second theme | A plain opaque theme ships alongside frosted glass |
 | D40 | Remembering the theme | Separate state file; the app never writes `config.toml` |
 | D41 | Open config folder | Creates the folders and a fully commented-out `config.toml` |
+| D42 | Project name | Excalibur |
 
 ## Details
 
@@ -178,7 +179,7 @@ Each theme is a folder containing a stylesheet (colours, fonts and spacing as CS
 
 - **Rejected:** a single CSS file (cannot control native blur); a settings file only (themes limited to what the app anticipated).
 
-### D20. File layout: `~/.config/stats_gui`
+### D20. File layout: `~/.config/excalibur`
 
 One folder holding `config.toml`, `plugins/` and `themes/`. Resolves O5.
 
@@ -187,7 +188,7 @@ One folder holding `config.toml`, `plugins/` and `themes/`. Resolves O5.
 
 ### D21. Built-ins ship in the app bundle; the user folder overrides them
 
-Built-in plugins and the default theme are loaded from inside the app, so `brew upgrade` updates them. `~/.config/stats_gui` holds only the user's additions. A user plugin or theme with the same name as a built-in replaces it, and config can disable any built-in.
+Built-in plugins and the default theme are loaded from inside the app, so `brew upgrade` updates them. `~/.config/excalibur` holds only the user's additions. A user plugin or theme with the same name as a built-in replaces it, and config can disable any built-in.
 
 - **Rejected:** copying built-ins into the user folder on first launch, with or without overwriting on upgrade.
 - **Why:** upgrades never fight with the user's edits.
@@ -328,7 +329,7 @@ App shows     (81257.5 - 81234.0) / 1 s = 23.5 %
 ### D35. `config.toml` contents
 
 ```toml
-# ~/.config/stats_gui/config.toml
+# ~/.config/excalibur/config.toml
 theme    = "frosted"
 interval = 2.0        # global default, seconds
 timeout  = 5.0        # plugin timeout, seconds
@@ -386,7 +387,7 @@ A simple solid-background theme with no blur.
 
 ### D40. The chosen theme is remembered in a separate state file
 
-Switching theme from the menu writes the choice to the app's own file, `~/.config/stats_gui/state.toml`. The app never writes to `config.toml`. The `theme` setting in `config.toml` is the default until a theme is picked from the menu.
+Switching theme from the menu writes the choice to the app's own file, `~/.config/excalibur/state.toml`. The app never writes to `config.toml`. The `theme` setting in `config.toml` is the default until a theme is picked from the menu.
 
 - **Rejected:** updating `theme` in `config.toml`; not remembering the choice.
 - **Why:** `config.toml` stays hand-edited only, so comments and formatting are safe.
@@ -394,10 +395,25 @@ Switching theme from the menu writes the choice to the app's own file, `~/.confi
 
 ### D41. "Open config folder" creates the folders and a commented config
 
-If `~/.config/stats_gui` does not exist, the menu action creates it with empty `plugins/` and `themes/` folders and a `config.toml` in which every setting is present but commented out, showing the defaults.
+If `~/.config/excalibur` does not exist, the menu action creates it with empty `plugins/` and `themes/` folders and a `config.toml` in which every setting is present but commented out, showing the defaults.
 
 - **Rejected:** creating empty folders only; creating the folder at first launch (writes to the home folder without being asked).
 - **Implication:** an existing `config.toml` is never overwritten. This one-time creation is the single exception to the app not writing `config.toml` (D40).
+
+### D42. Project name: Excalibur
+
+The project was renamed from its working name, `stats_gui`, during phase 0. Earlier entries in this document were updated to the new name.
+
+| Where | Name |
+|---|---|
+| App and window title | Excalibur |
+| Rust package / library | `excalibur` / `excalibur_lib` |
+| Bundle identifier | `com.gaberighter.excalibur` |
+| Config folder | `~/.config/excalibur` |
+| GitHub repository | `gaberighter/excalibur` |
+| Helper binary | `stats-probe`, unchanged (D32) |
+
+- **Not renamed:** the local working folder, which is still `stats_gui`.
 
 ## Open questions
 

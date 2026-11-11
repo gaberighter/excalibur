@@ -1,4 +1,4 @@
-# stats_gui
+# Excalibur
 
 A small floating window for macOS that shows system metrics (CPU, memory, storage, temperature, network, GPU) in one place, with drop-in plugins and themes.
 

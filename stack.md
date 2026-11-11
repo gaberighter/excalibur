@@ -16,7 +16,7 @@ Items marked **confirmed** were decided during scoping. Items marked **proposed*
 | Temperature and GPU | Best effort, source to be chosen | Open |
 | Built-in metrics | One Rust helper binary, a subcommand per metric | Confirmed (D22) |
 | Plugin data format | JSON on standard output, parsed with `serde` and `serde_json` | Confirmed (D15); crates proposed |
-| Config | `~/.config/stats_gui/config.toml` | Confirmed (D20) |
+| Config | `~/.config/excalibur/config.toml` | Confirmed (D20) |
 | Distribution | Homebrew tap, builds on GitHub Releases | Confirmed (D13) |
 | Target platform | macOS on Apple Silicon | Confirmed (D2) |
 
@@ -24,7 +24,7 @@ Items marked **confirmed** were decided during scoping. Items marked **proposed*
 
 Responsible for:
 
-- Finding plugins in the app bundle and in `~/.config/stats_gui/plugins`, with the user folder taking precedence (D21).
+- Finding plugins in the app bundle and in `~/.config/excalibur/plugins`, with the user folder taking precedence (D21).
 - Running each plugin's executable at its refresh rate and parsing the JSON it prints (D15, D18).
 - Turning counter values into rates (D16).
 - Treating slow, failing or invalid plugins as unavailable (D6).
@@ -77,7 +77,7 @@ Temperature and GPU are the risky parts of the stack. Both should be tested on t
 - A plugin reports one number and chooses value only or value with sparkline (D17). Network is two plugins, upload and download.
 - Built-in plugins are manifests pointing at the helper binary (D22) and ship inside the app bundle (D21).
 - A theme is a folder with a stylesheet and a settings file for window-level effects (D19). The default frosted glass theme ships inside the app bundle.
-- User plugins and themes live in `~/.config/stats_gui/plugins` and `~/.config/stats_gui/themes` (D20).
+- User plugins and themes live in `~/.config/excalibur/plugins` and `~/.config/excalibur/themes` (D20).
 
 File formats, all defined in decisions.md:
 
