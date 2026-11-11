@@ -14,7 +14,7 @@ How the first version gets built. Decision numbers (D…) and open questions (O�
 |---|---|---|
 | 0 | Project setup | A repository that builds an empty Tauri window and an empty helper |
 | 1 | Risk prototypes | A go/no-go answer for each unverified item |
-| 2 | `stats-probe` helper | Seven subcommands printing valid plugin output |
+| 2 | `stats-probe` helper | One run returning any of the seven built-in metrics |
 | 3 | Plugin engine | The app runs plugins and produces values and history, tested without a UI |
 | 4 | Window and metric display | All metrics visible in a window, updating live |
 | 5 | Themes | Frosted default theme, switchable at runtime |
@@ -55,20 +55,22 @@ Also settle here:
 
 ## Phase 2: `stats-probe` helper
 
-- One subcommand per built-in metric: `cpu`, `memory`, `storage`, `temperature`, `gpu`, `net-down`, `net-up`, with the units, decimals, display and intervals fixed in D36.
-- Memory reports the amount used; storage reports the space free, and its label says so (D37).
-- Each prints exactly one line in the D27 format and exits. Unavailable sensors print `{"value": null, "reason": "…"}` with exit code 0.
+- Seven built-in metrics: `cpu`, `memory`, `storage`, `temperature`, `gpu`, `net-down`, `net-up`, with the units, decimals, display and intervals fixed in D36.
+- One run returns every metric it is asked for, so the app launches a single process per cycle for all built-ins (D43). The invocation and output shape are settled first (O18).
+- Memory reports the amount used; storage reports the space free, and its label says so (D37). Temperature is the average of the die sensors (D44). GPU is read from the IORegistry as a gauge (D36).
+- Each metric is reported in the D27 shape, and the helper exits after one run. Unavailable sensors print `{"value": null, "reason": "…"}` with exit code 0.
 - Values are printed in the display unit (D31); counters print running totals in that unit (D16, D33).
 - OS-specific code sits behind one internal boundary per metric, so another OS can be added later without touching the subcommand layer (D2).
 - No state, no files written, no sudo (D6, D15).
 
 Tests:
 
-- Every subcommand's output parses as the D27 format.
-- Counter subcommands never decrease between two consecutive runs.
-- An unknown subcommand exits non-zero.
+- Every metric, asked for alone or in a batch, comes back in the D27 shape.
+- A batch containing an unavailable metric still returns the others.
+- Counter metrics never decrease between two consecutive runs.
+- An unknown metric name exits non-zero.
 
-**Done when:** all seven subcommands run on the M2, and running `cpu` twice a second apart gives a difference that matches Activity Monitor to within a few points.
+**Done when:** all seven metrics are returned by a single run on the M2, and running `cpu` twice a second apart gives a difference that matches Activity Monitor to within a few points.
 
 ## Phase 3: Plugin engine
 

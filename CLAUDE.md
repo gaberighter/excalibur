@@ -25,7 +25,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D42) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D44) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -38,11 +38,11 @@ Stack: Rust with Tauri v2, and a plain HTML/CSS/JS frontend with no framework an
 Two Rust binaries:
 
 - **The Tauri app.** Discovers plugins, runs them on a schedule, turns counters into rates, keeps 60 s of history in memory for sparklines, loads themes, and sends samples to the frontend. It contains no metric-collection code of its own.
-- **`stats-probe`.** A helper with one subcommand per built-in metric (`stats-probe cpu`, `stats-probe memory`, …). All OS-specific code lives here, which is what keeps a future port to another OS contained.
+- **`stats-probe`.** A helper that returns any of the built-in metrics. The app runs it once per refresh cycle for all built-ins that are due, not once per metric (D43; exact invocation is open question O18). All OS-specific code lives here, which is what keeps a future port to another OS contained.
 
 Plugin model (D14–D18, D26–D28, D31, D33–D34):
 
-- Every metric is a plugin, built-ins included. A plugin is a folder with a `plugin.toml` manifest and an executable. Built-in manifests point at `stats-probe`.
+- Every metric is a plugin, built-ins included. A plugin is a folder with a `plugin.toml` manifest and an executable. Built-in manifests point at `stats-probe`. Collection differs: each drop-in plugin is its own process, while all built-ins share one `stats-probe` run per cycle (D43).
 - The app runs the executable once per refresh and reads one JSON object from stdout: `{"value": 42.1}`, or `{"value": null, "reason": "…"}`. A non-zero exit or invalid output also means unavailable.
 - Plugins are stateless and report a single number. For rates, the manifest sets `kind = "counter"`, the plugin prints a running total, and the app computes the change per second. CPU usage uses this path too, by printing cumulative percent-seconds.
 - The app does no unit scaling. A plugin prints its value in the unit it wants displayed.
@@ -70,7 +70,6 @@ These should be prototyped on the MacBook Air M2 before the plugin interface is 
 
 - Reading temperature and GPU usage without sudo.
 - Getting raw cumulative CPU time for the percent-seconds counter; the `sysinfo` crate may only expose a computed percentage.
-- The app's own CPU cost of launching roughly seven processes per refresh cycle at a 1 s interval.
 - Changing Tauri window effects at runtime for theme switching, and a right-click menu on a borderless, Dock-less window.
 
 ## Distribution

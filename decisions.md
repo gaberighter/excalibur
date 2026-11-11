@@ -50,6 +50,8 @@ All entries below were decided on 2026-11-11.
 | D40 | Remembering the theme | Separate state file; the app never writes `config.toml` |
 | D41 | Open config folder | Creates the folders and a fully commented-out `config.toml` |
 | D42 | Project name | Excalibur |
+| D43 | Built-in collection | One `stats-probe` run per refresh cycle for all built-ins (amends D9, D14, D15, D22) |
+| D44 | Temperature value | Average of the die temperature sensors |
 
 ## Details
 
@@ -110,6 +112,7 @@ The six first-version metrics are not special-cased. They go through the same in
 
 - **Why:** one code path to maintain, and the built-ins prove the interface is sufficient.
 - **Implication:** if a built-in needs something the interface cannot express, the interface is extended, not bypassed.
+- **Amended by D43:** built-ins are now collected in one batched `stats-probe` run, a path drop-in plugins do not use. Everything after collection is still shared.
 
 ### D10. Plugins control how they are drawn, to an extent
 
@@ -143,6 +146,7 @@ A plugin is an executable together with a manifest describing it (name, unit, pr
 - **Rejected:** one interface with in-process Rust for built-ins and executables for drop-ins; dynamic libraries or WASM modules.
 - **Why:** the purest reading of "same interface". Built-ins can be replaced or disabled like any other plugin.
 - **Accepted cost:** more processes and slightly higher overhead than in-process collection.
+- **Amended by D43:** the cost was measured in phase 1 and judged too high for the built-ins, which now share one process per cycle. Drop-in plugins are unchanged.
 
 ### D15. Plugin execution: run once per refresh
 
@@ -151,6 +155,7 @@ On each tick the app runs the plugin's executable and reads one JSON object from
 - **Rejected:** long-running plugins that stream one line per sample; supporting both styles.
 - **Why:** a plugin can be a few lines of shell script.
 - **Implication:** plugins keep no state between runs (see D16). The app must cope with a plugin that is slow, fails or prints something invalid, and show the metric as unavailable (D6).
+- **Amended by D43:** for built-ins, one run returns several metrics. It is still run-once and stateless.
 
 ### D16. Rates: the app computes them
 
@@ -357,7 +362,7 @@ The `plugins` list sets the order in the window. Plugins not listed are appended
 | `memory` | gauge | GB | 1 | sparkline | default |
 | `storage` | gauge | GB | 0 | value | 30 s |
 | `temperature` | gauge | °C | 0 | sparkline | default |
-| `gpu` | gauge or counter, depending on what the sensor exposes | % | 1 | sparkline | default |
+| `gpu` | gauge (confirmed in phase 1: macOS exposes an instantaneous percentage) | % | 1 | sparkline | default |
 | `net-down` | counter | MB/s | 2 | sparkline | 1 s |
 | `net-up` | counter | MB/s | 2 | sparkline | 1 s |
 
@@ -415,6 +420,37 @@ The project was renamed from its working name, `stats_gui`, during phase 0. Earl
 
 - **Not renamed:** the local working folder, which is still `stats_gui`.
 
+### D43. Built-ins are collected in one `stats-probe` run per refresh cycle
+
+Decided on 2026-11-11 after the phase 1 measurements. The app no longer launches one process per built-in metric. On each cycle it runs `stats-probe` once and gets back the values for every built-in that is due.
+
+- **Why:** launching seven processes per second cost about 5.5 % of one core on the M2 (2.8 % at a 2 s interval), with the processes themselves accounting for almost all of it. That is too much for a monitor to spend on itself.
+- **Rejected:** keeping one process per metric; moving all plugins to long-running processes.
+- **Amends:** D9, D14, D15 and D22. D22's "one subcommand per metric" becomes one run that can return several metrics.
+- **Unchanged:** drop-in plugins still run one executable per plugin and print one D27 object. Built-ins keep their own manifests, names, display, kind, intervals, ordering, and the ability to be disabled or replaced by a user plugin of the same name. Counter-to-rate conversion, history and unavailable handling are still shared by all plugins.
+- **Cost:** D9 no longer holds in full. Built-ins reach the app by a batch path that drop-ins cannot use, so the built-ins no longer prove that the drop-in interface is sufficient on its own. The drop-in path needs its own tests.
+- **Implication:** batching only saves work if built-ins fall due together, so the scheduler should align intervals to a common tick. A replaced or disabled built-in must be left out of the batch.
+- **To be designed:** the exact invocation and output shape (O18).
+
+### D44. Temperature is the average of the die sensors
+
+The M2 exposes 34 temperature sensors and no single "CPU temperature". The `temperature` built-in reports the average of the die sensors (labelled `tdie`).
+
+- **Rejected:** the hottest die sensor.
+- **Implication:** if no die sensors are found, as may happen on other Mac models, the metric is unavailable (D6). Sensor labels on other chips need checking before the app is used on another Mac.
+
+## Phase 1 results
+
+Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
+
+| # | Question | Result |
+|---|---|---|
+| 1a | Temperature without sudo | Works. The `sysinfo` crate returned 34 sensors. See D44. |
+| 1b | GPU usage without sudo | Works. The IORegistry entry for the GPU publishes "Device Utilization %". Read with the `ioreg` command; reading it from Rust is still to be written. |
+| 1c | Raw CPU time for percent-seconds (D33) | Works, using the macOS host statistics call from the `libc` crate. Readings were in the same range as `top`. The tick counter is 32-bit and wraps after roughly 62 days of uptime, which D16 already handles as one missed sample. |
+| 1d | Cost of launching seven processes per second | About 5.5 % of one core at 1 s, 2.8 % at 2 s; slowest cycle 34 ms. Led to D43. |
+| 1e | Runtime window effects and right-click menu on a borderless, Dock-less window | Works. Checked by hand: frosted borderless panel with rounded corners, no Dock or app-switcher entry, draggable by its body, right-click menu, switching between a frosted and a plain theme (blur, colour and width) without a restart, and quit from the menu. |
+
 ## Open questions
 
 O1–O16 are all resolved (D14–D35). One point is left to confirm during implementation:
@@ -422,3 +458,5 @@ O1–O16 are all resolved (D14–D35). One point is left to confirm during imple
 | # | Question | Notes |
 |---|---|---|
 | O17 | Optional `max` field in `plugin.toml` | Needed to clamp CPU usage at 100 (D33). Not yet agreed as part of the manifest. |
+| O18 | How does the batched `stats-probe` run work (D43)? | Proposed: the app passes the names of the built-ins due this cycle, e.g. `stats-probe cpu net-down net-up`, and gets one JSON object keyed by name, each entry in the D27 shape. A single name, `stats-probe cpu`, would then still be usable from a user plugin. Also to settle: how a built-in manifest says it belongs to the batch. |
+| O19 | `PATH` for drop-in plugins | How the app finds Homebrew-installed tools when launched outside a terminal (D38). Not yet tested. |

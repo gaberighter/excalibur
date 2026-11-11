@@ -14,7 +14,7 @@ Items marked **confirmed** were decided during scoping. Items marked **proposed*
 | Sparklines | Hand-drawn with inline SVG or `<canvas>`, no charting library | Proposed |
 | System metrics | `sysinfo` crate | Proposed |
 | Temperature and GPU | Best effort, source to be chosen | Open |
-| Built-in metrics | One Rust helper binary, a subcommand per metric | Confirmed (D22) |
+| Built-in metrics | One Rust helper binary; one run per refresh cycle returns all built-ins that are due | Confirmed (D22, D43) |
 | Plugin data format | JSON on standard output, parsed with `serde` and `serde_json` | Confirmed (D15); crates proposed |
 | Config | `~/.config/excalibur/config.toml` | Confirmed (D20) |
 | Distribution | Homebrew tap, builds on GitHub Releases | Confirmed (D13) |
@@ -93,7 +93,7 @@ File formats, all defined in decisions.md:
 
 The app does no unit scaling; plugins print values in the unit they want shown (D31). Plugins that overrun are skipped for that tick and killed after a timeout, 5 s by default (D28). Sparklines cover a fixed 60 s window (D29).
 
-Performance to check early: with every metric as a run-once executable, the app launches roughly seven processes per refresh cycle. Measure the app's own CPU use at a 1 s rate on the M2 before building further on this design.
+Measured in phase 1: launching seven processes per second cost about 5.5 % of one core on the M2. Built-ins are therefore collected in one `stats-probe` run per cycle (D43). Each drop-in plugin still costs one process per refresh, so many fast drop-ins will add up.
 
 ## Distribution
 
