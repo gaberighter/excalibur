@@ -77,7 +77,7 @@ Command lookup (D38): a bare `command` name in a manifest is resolved in the plu
 - **Never require sudo** or prompt for a password.
 - **No persistence of readings.** History is in memory only and is lost on quit by design.
 - **Do not special-case built-in metrics.** If a built-in needs something the plugin interface cannot express, extend the interface.
-- **Keep OS-specific code out of the app, frontend, plugin interface and themes.**
+- **Keep OS-specific code out of the app, frontend, plugin interface and themes.** The one exception is `src-tauri/src/system_accent.rs`, which reads the macOS accent colour, because the page cannot (web content gets a fixed blue for `AccentColor`).
 - **First version exclusions:** fill bars, multi-value plugins (network is two plugins, `net-down` and `net-up`), remembered window position, a menu bar icon, code signing.
 
 ## Phase 1 findings worth knowing

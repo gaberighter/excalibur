@@ -8,6 +8,7 @@ pub mod engine;
 pub mod placement;
 pub mod scaffold;
 pub mod state;
+pub mod system_accent;
 pub mod theme;
 
 use engine::config::{self, Config};
@@ -121,6 +122,9 @@ fn snapshot(engine: tauri::State<Engine>) -> engine::Snapshot {
 
 const MIN_WINDOW_HEIGHT: f64 = 60.0;
 const MAX_WINDOW_HEIGHT: f64 = 2000.0;
+
+/// How often the system's accent colour is read again.
+const SYSTEM_ACCENT_CHECK: Duration = Duration::from_secs(2);
 
 /// Gap between the window and the screen's edges where it first appears.
 const CORNER_MARGIN: f64 = 16.0;
@@ -266,7 +270,10 @@ impl ThemeState {
             radius: active.theme.radius,
             width: active.theme.width,
             layout: active.theme.layout,
-            accent: accent::colours(self.accent.lock().unwrap().in_force()),
+            accent: accent::colours_with_system(
+                self.accent.lock().unwrap().in_force(),
+                system_accent::current(),
+            ),
             warnings: active.warnings.clone(),
         }
     }
@@ -501,6 +508,25 @@ pub fn run() {
             apply_to_window(app.handle(), &active.theme)?;
             *themes.current.lock().unwrap() = active;
             app.manage(themes);
+
+            // The system's accent can change while the app runs. Nothing
+            // announces it in a portable way, so it is read again now and then.
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let mut last = system_accent::current();
+                loop {
+                    std::thread::sleep(SYSTEM_ACCENT_CHECK);
+                    let themes = handle.state::<ThemeState>();
+                    if themes.accent.lock().unwrap().in_force() != accent::SYSTEM {
+                        continue;
+                    }
+                    let now = system_accent::current();
+                    if now != last {
+                        last = now;
+                        send_theme(&handle);
+                    }
+                }
+            });
 
             // The window starts hidden and is shown by the page's first
             // `fit_height`, once its size and corner are known.

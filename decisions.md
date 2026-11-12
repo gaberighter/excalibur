@@ -588,10 +588,12 @@ Decided on 2026-11-11. The right-click menu gains an "Accent Color" submenu: The
 
 Decided on 2026-11-11. The Accent Color submenu gains "System Accent", below Theme Default, and `accent = "system"` is accepted in `config.toml`. It uses the accent colour chosen in the operating system's settings. The choices made for D57 were agreed at the same time.
 
-- **How:** the page is given the web's own keyword for the system accent (`AccentColor`), so the app has no macOS-specific code for it and other operating systems are covered by the same keyword.
-- **Lightened on dark surfaces.** System accents are mid-tones meant for buttons, and are too dark for a thin line on a dark surface, so there the colour is mixed with white. On a light surface it is used as it is.
-- **Not checked for contrast.** The colour is the system's, so it cannot be tested ahead of time the way the presets are.
-- **Checked** from captures on Frosted Round and Plain with the system accent at its default, blue: lines and arcs are drawn in a light blue. Not checked: that the colour follows a change made in System Settings, because that would mean changing the user's settings.
+- **How:** the app reads the setting itself and sends the colour to the page. On macOS that is the `AppleAccentColor` preference, mapped to the eight colours macOS offers; "Multicolour", the default, is blue. It is read again every 2 seconds while System Accent is in use, so a change in System Settings shows up without a restart.
+- **Corrected on 2026-11-11.** It was first built on the web's own keyword for the system accent (`AccentColor`), so that the app would need no macOS-specific code. That did not work: web content is given a fixed blue whatever the setting is, which went unnoticed because the machine's accent was blue at the time. The keyword is now only the fallback on systems where the setting cannot be read.
+- **This is OS-specific code in the app**, in `system_accent.rs`, which D2 asked to keep out. It is a few lines behind one function, and other systems fall back to the keyword until they get their own reader.
+- **Lightened on dark surfaces.** System accents are mid-tones meant for buttons, and are too dark for a thin line on a dark surface, so there the colour is mixed with white (55 % colour). On a light surface it is used as it is.
+- **Contrast:** at that mix every macOS accent has at least 3:1 against the frosted surface at its lightest, except purple at about 2.7:1.
+- **Checked** from captures with the system accent set to orange: arcs on Frosted Round and sparklines on Frosted are drawn in a light orange. Not checked: that a change made in System Settings is picked up while the app is running.
 - **Whether it is the default** was left open here and settled by D59.
 
 ### D59. A fresh install starts on System Accent

@@ -45,12 +45,10 @@ pub const THEME_DEFAULT: &str = "theme";
 
 /// Stands for the accent colour chosen in the operating system's settings.
 pub const SYSTEM: &str = "system";
-/// The system's accent as the page's own colour keyword, so it follows the
-/// system setting without the app having to ask for it.
-const SYSTEM_ON_LIGHT: &str = "AccentColor";
-/// System accents are mid-tones, too dark for a line on a dark surface, so
-/// there they are lightened.
-const SYSTEM_ON_DARK: &str = "color-mix(in oklab, AccentColor 55%, white)";
+/// The page's own keyword for the system accent, used where the app cannot
+/// read the system's setting itself. Web content is often given a fixed
+/// colour for it, so it is a last resort.
+const SYSTEM_KEYWORD: &str = "AccentColor";
 
 /// The accent as the page receives it, for dark and for light surfaces.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -67,10 +65,7 @@ pub fn is_valid(value: &str) -> bool {
 /// The colours a setting stands for, or `None` for the theme's own.
 pub fn colours(value: &str) -> Option<Colours> {
     if value == SYSTEM {
-        return Some(Colours {
-            on_dark: SYSTEM_ON_DARK.to_string(),
-            on_light: SYSTEM_ON_LIGHT.to_string(),
-        });
+        return Some(system_colours(SYSTEM_KEYWORD));
     }
     if let Some(preset) = PRESETS.iter().find(|preset| preset.id == value) {
         return Some(Colours {
@@ -83,6 +78,23 @@ pub fn colours(value: &str) -> Option<Colours> {
         on_dark: value.to_string(),
         on_light: value.to_string(),
     })
+}
+
+/// As `colours`, with the system's accent filled in when it could be read.
+pub fn colours_with_system(value: &str, system: Option<&str>) -> Option<Colours> {
+    match (value, system) {
+        (SYSTEM, Some(colour)) => Some(system_colours(colour)),
+        _ => colours(value),
+    }
+}
+
+/// System accents are mid-tones meant for buttons, too dark for a thin line
+/// on a dark surface, so there they are lightened.
+fn system_colours(base: &str) -> Colours {
+    Colours {
+        on_dark: format!("color-mix(in oklab, {base} 55%, white)"),
+        on_light: base.to_string(),
+    }
 }
 
 fn is_hex_colour(value: &str) -> bool {
@@ -135,10 +147,25 @@ mod tests {
 
     #[test]
     fn system_follows_the_operating_system_and_is_lighter_on_dark() {
-        let colours = colours(SYSTEM).unwrap();
-        assert_eq!(colours.on_light, "AccentColor");
-        assert!(colours.on_dark.contains("AccentColor") && colours.on_dark.contains("white"));
+        let colours = colours_with_system(SYSTEM, Some("#f7821b")).unwrap();
+        assert_eq!(colours.on_light, "#f7821b");
+        assert_eq!(colours.on_dark, "color-mix(in oklab, #f7821b 55%, white)");
         assert!(is_valid(SYSTEM));
+    }
+
+    #[test]
+    fn system_falls_back_to_the_page_keyword_when_it_cannot_be_read() {
+        let colours = colours_with_system(SYSTEM, None).unwrap();
+        assert_eq!(colours.on_light, "AccentColor");
+    }
+
+    #[test]
+    fn the_system_colour_does_not_affect_other_choices() {
+        assert_eq!(
+            colours_with_system("orange", Some("#007aff")),
+            colours("orange")
+        );
+        assert_eq!(colours_with_system(THEME_DEFAULT, Some("#007aff")), None);
     }
 
     #[test]
