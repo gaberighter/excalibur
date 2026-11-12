@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0 and 1 of `implementation_plan.md` are complete: phase 1 confirmed the risky parts on the M2 (results in `decisions.md`), and the repository builds an empty Tauri window and an empty `stats-probe` helper. No metrics, plugin engine or themes exist yet.
+Phases 0–2 of `implementation_plan.md` are complete. Phase 1 confirmed the risky parts on the M2, and `stats-probe` reports all seven built-in metrics (results for both are in `decisions.md`). The Tauri app is still an empty window: the plugin engine, display and themes do not exist yet.
 
 ## Commands
 
 ```sh
 cargo tauri dev                          # run the app (needs tauri-cli v2)
-cargo run -p stats-probe -- <metric>     # run the helper
+cargo run -p stats-probe -- cpu memory   # run the helper; prints one JSON object keyed by metric
 cargo build --workspace
 cargo test --workspace                   # all tests
 cargo test -p stats-probe <test_name>    # a single test in one crate

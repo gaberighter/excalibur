@@ -2,7 +2,7 @@
 
 A small floating window for macOS that shows system metrics (CPU, memory, storage, temperature, network, GPU) in one place, with drop-in plugins and themes.
 
-The project is at an early stage: the repository builds an empty window and an empty helper.
+The project is at an early stage: the `stats-probe` helper reports all seven metrics, and the app itself is still an empty window.
 
 ## Documents
 
@@ -17,6 +17,6 @@ Prerequisites: a current stable Rust toolchain, Xcode Command Line Tools, and th
 
 ```sh
 cargo tauri dev            # run the app
-cargo run -p stats-probe   # run the helper
+cargo run -p stats-probe -- cpu memory   # run the helper
 cargo test --workspace     # run all tests
 ```

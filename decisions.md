@@ -493,6 +493,36 @@ Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
 | 1d | Cost of launching seven processes per second | About 5.5 % of one core at 1 s, 2.8 % at 2 s; slowest cycle 34 ms. Led to D43. |
 | 1e | Runtime window effects and right-click menu on a borderless, Dock-less window | Works. Checked by hand: frosted borderless panel with rounded corners, no Dock or app-switcher entry, draggable by its body, right-click menu, switching between a frosted and a plain theme (blur, colour and width) without a restart, and quit from the menu. |
 
+## Phase 2 results
+
+`stats-probe` built and checked on the MacBook Air M2 on 2026-11-11.
+
+| Metric | Source | Check |
+|---|---|---|
+| `cpu` | Host statistics call (`libc`) | Five one-second differences read 6.8–11.6 %, against 6.5–9.1 % from `top` over the same period. The two were not sampled at the same instants. |
+| `memory` | Host VM statistics (`libc`): app memory + wired + compressed | 5.62 GB, matching the same sum computed from `vm_stat`. Not compared against Activity Monitor's window by eye. |
+| `storage` | `statvfs` on `/` | 31.3 GB free, matching `df`. |
+| `temperature` | `sysinfo` components, average of `tdie` sensors | 33 °C. No independent tool to compare against. |
+| `gpu` | `sysinfo`, which reads "Device Utilization %" from the IORegistry | Read 5 % when `ioreg` read 0 % a moment later; the figure is instantaneous and moves between reads, so this is not an exact check. |
+| `net-down`, `net-up` | `sysinfo` network totals, summed over `en*` interfaces | Matched `netstat -ib` totals for `en*`. |
+
+Implementation choices made in phase 2 and not previously agreed:
+
+- **Memory is in binary gigabytes** (1024³ bytes), as Activity Monitor uses. **Storage and network are decimal** (10⁹ bytes per GB, 10⁶ per MB), as Finder and most network tools use.
+- **Storage free space is what `statvfs` reports.** Finder's "available" figure is larger because it adds space macOS can reclaim on demand.
+- **Network counts `en*` interfaces only** (Wi-Fi, Ethernet, tethering). Loopback and VPN tunnels are excluded so VPN traffic is not counted twice.
+- **GPU comes from `sysinfo`**, which already reads the IORegistry value found in phase 1, so no reader of our own was needed.
+
+Cost, measured with the release build:
+
+| What | CPU time per run |
+|---|---|
+| Launching any process (`/usr/bin/true`) | about 3 ms |
+| `stats-probe` with one cheap metric | about 8 ms |
+| `stats-probe` with all seven metrics | about 20 ms, of which temperature is about 9 ms |
+
+One batched run per second with all seven metrics costs about 2.3 % of one core, against 5.5 % for seven separate processes. Temperature is the expensive metric and its run took up to 85 ms of wall-clock time; refreshing it less often than the others would lower the cost further.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.
