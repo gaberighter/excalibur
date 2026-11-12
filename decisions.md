@@ -669,13 +669,14 @@ A bug found and fixed: the page's surface was painted on `<body>`, which browser
 
 The arcs layout and the Frosted Round theme were built on 2026-11-11 (D50–D53). Checked from a capture of the app's own window: a circular frosted window 180 px across, in the bottom right corner, with seven arcs and their curved labels inside the circle. At 180 × 180 it covers about 31 % of the area of the rows layout (220 × 374).
 
-Not checked, because they need a mouse: whether clicks on the transparent corners of the square window pass through to what is behind, and how dragging and the menu feel on a round window.
+Checked by hand on 2026-11-11: clicks on the transparent corners of the square window pass through to what is behind, and dragging and the right-click menu work on the round window.
 
 Implementation choices not previously agreed:
 
 - **Frosted Round is a new theme**; Frosted and Plain keep the rows layout, and the default is still Frosted.
 - **Units are always shown in the arcs layout**, joined to the value with a space when the unit is a word ("5.8 GB") and without one otherwise ("9.4%", "38°C").
-- **An unavailable metric** shows its label and a dash, with an empty track. Hovering an arc shows the full label and value, or the reason there is none.
+- **An unavailable metric** shows its label and a dash, with an empty track.
+- **Pointing at an arc** names it in full in the middle of the disc, with its value, and dims the other arcs. This replaced a system tooltip, which did not appear when tried by hand.
 - **Warnings** are shown in the arcs layout as a count in the middle of the disc, with the details on hover.
 - **A new theme variable, `--track`**, is the colour of the unfilled part of an arc.
 

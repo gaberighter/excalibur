@@ -170,11 +170,24 @@ const ArcsView = {
     svg.setAttribute("height", size);
     const defs = svgEl("defs", "", svg);
 
+    // Wide enough that neighbouring rings' hover areas meet.
+    const hitWidth = radii.length > 1 ? radii[0] - radii[1] : stroke * 1.5;
+    this.svg = svg;
+    this.hovered = null;
+
     let index = 0;
     for (const metric of metrics.values()) {
       const radius = radii[index];
       const group = svgEl("g", "arc", svg);
       const title = svgEl("title", "", group);
+      // An invisible ring, easier to point at than the arc itself.
+      const hit = svgEl("circle", "arc-hit", group);
+      hit.setAttribute("cx", centre);
+      hit.setAttribute("cy", centre);
+      hit.setAttribute("r", radius);
+      hit.setAttribute("stroke-width", hitWidth);
+      group.addEventListener("mouseenter", () => this.hover(metric));
+      group.addEventListener("mouseleave", () => this.hover(null));
       const circle = (className) => {
         const node = svgEl("circle", className, group);
         node.setAttribute("cx", centre);
@@ -203,21 +216,44 @@ const ArcsView = {
       svgEl("tspan", "arc-label", onPath).textContent = `${metric.plugin.short} `;
       const value = svgEl("tspan", "arc-value", onPath);
 
-      metric.els = { radius, fill, value, title };
+      metric.els = { radius, fill, value, title, group };
       index += 1;
     }
 
-    // The middle of the disc is free; it says so when something is wrong.
-    this.warningEl = svgEl("text", "arc-warning", svg);
-    this.warningEl.setAttribute("x", centre);
-    this.warningEl.setAttribute("y", centre + fontSize * 0.36);
-    this.warningEl.setAttribute("text-anchor", "middle");
-    this.warningEl.setAttribute("font-size", fontSize);
+    // The middle of the disc is free. It names the arc being pointed at,
+    // in full, and otherwise says so when something is wrong.
+    const centreText = (className, size, y) => {
+      const node = svgEl("text", className, svg);
+      node.setAttribute("x", centre);
+      node.setAttribute("y", y);
+      node.setAttribute("text-anchor", "middle");
+      node.setAttribute("font-size", size);
+      return node;
+    };
+    this.readoutLabel = centreText("arc-readout-label", fontSize, centre - fontSize * 0.5);
+    this.readoutValue = centreText("arc-readout-value", fontSize * 1.5, centre + fontSize * 1.1);
+    this.warningEl = centreText("arc-warning", fontSize, centre + fontSize * 0.36);
     this.warningTitle = svgEl("title", "", this.warningEl);
     this.warningText = svgEl("tspan", "", this.warningEl);
   },
 
+  /** Points at one metric, or at none. */
+  hover(metric) {
+    if (this.hovered) this.hovered.els.group.classList.remove("hovered");
+    this.hovered = metric;
+    this.svg.classList.toggle("hovering", metric !== null);
+    if (metric) metric.els.group.classList.add("hovered");
+    this.drawReadout();
+  },
+
+  drawReadout() {
+    const metric = this.hovered;
+    this.readoutLabel.textContent = metric ? metric.plugin.label : "";
+    this.readoutValue.textContent = metric ? withUnit(metric.plugin, latestValue(metric)) : "";
+  },
+
   draw(metric) {
+    if (metric === this.hovered) this.drawReadout();
     const { plugin, els } = metric;
     const value = latestValue(metric);
     const filled = Arcs.share(value, metric.min, metric.max, Arcs.peak(metric.points));

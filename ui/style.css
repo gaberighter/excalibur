@@ -177,3 +177,33 @@ body {
   fill: var(--text);
   font-weight: var(--value-weight);
 }
+
+/* Catches the pointer over a ring without being seen. */
+.arc-hit {
+  fill: none;
+  stroke: transparent;
+  pointer-events: stroke;
+}
+
+/* While one arc is pointed at, the others step back. */
+.arcs.hovering .arc {
+  opacity: 0.4;
+}
+
+.arcs.hovering .arc.hovered {
+  opacity: 1;
+}
+
+.arcs.hovering .arc-warning {
+  display: none;
+}
+
+.arc-readout-label {
+  fill: var(--text-muted);
+}
+
+.arc-readout-value {
+  fill: var(--text);
+  font-weight: var(--value-weight);
+  font-variant-numeric: tabular-nums;
+}
