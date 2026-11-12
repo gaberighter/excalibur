@@ -1,0 +1,4 @@
+name   = "Frosted"
+effect = "hudWindow"   # native blur; "none" for a solid window
+radius = 12            # window corner radius
+width  = 220           # window width in px

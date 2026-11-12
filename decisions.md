@@ -543,6 +543,42 @@ Implementation choices made in phase 3, agreed on 2026-11-11:
 - **Reload keeps the history** of plugins that still exist and resets their counters.
 - **Warnings** (invalid manifests, invalid config, duplicate names) are collected and handed to the window. Nothing shows them yet.
 
+## Phase 4 results
+
+The window was connected to the engine on 2026-11-11. Checked from captures of the app's own window: seven rows with live values and units, sparklines on six of them, and a hover readout.
+
+- **The window's height follows its content.** A fixed height cut off the last row, because a title bar takes part of the window. The page now reports what it needs and what it has, and the window grows or shrinks by the difference.
+- **Warnings are shown** as a "2 warnings" line at the bottom of the window, with the details on hover.
+- **CPU agrees with `top`**: 22.2 % against 22.3 % averaged over the same 20 seconds.
+- **Not resolved:** memory was reported as reading a little lower than Activity Monitor. The helper's figure matches the documented sum computed from `vm_stat`; the two have not been compared at the same moment.
+
+## Phase 5 results
+
+Themes were built on 2026-11-11. Checked from captures of the app's own window:
+
+| Case | Result |
+|---|---|
+| No config | Frosted theme: translucent material, 220 px wide. |
+| `theme = "plain"` | Plain theme: solid dark panel, 260 px wide, roomier spacing. |
+| `theme = "does-not-exist"` | Falls back to frosted and shows "1 warning". |
+
+Switching themes while the app is running goes through the right-click menu and has to be checked by hand.
+
+Implementation choices made in phase 5 and not previously agreed:
+
+- **The theme part of the right-click menu was brought forward from phase 6**, because without it there is no way to switch themes while the app is running. The rest of the menu is still phase 6, and the choice is not remembered between launches until then (D40).
+- **A theme's id is its folder name.** `theme` in config and the menu refer to it; `name` in `theme.toml` is only what the menu shows.
+- **`effect` accepts any window material Tauri knows**, written as in Tauri's own configuration (for example `hudWindow`, `sidebar`, `underWindowBackground`), or `none`. Defaults: no effect, radius 0, width 220.
+- **Limits:** radius 0–64, width 120–1000. An unknown setting in `theme.toml` is rejected, as in manifests.
+- **The material stays translucent when another app is in front.** By default macOS dulls it when the window is inactive, which is how a monitor window spends most of its time.
+- **The frosted theme is also compiled into the app**, so there is still a look if no theme folder can be read.
+- **Themes are re-read each time the menu opens**, so a new theme folder appears without a restart.
+- **The radius in `theme.toml` is handed to the page** as `--window-radius`, so the page's corners and the window's cannot disagree.
+- **`EXCALIBUR_CONFIG_DIR`** overrides `~/.config/excalibur`. It was added so themes and config can be tried without touching the real folder.
+- **Theme warnings** are shown together with plugin warnings.
+
+The custom properties a theme's stylesheet sets are: `--surface`, `--surface-solid`, `--text`, `--text-muted`, `--spark-line`, `--spark-fill`, `--font`, `--value-weight`, `--pad`, `--row-gap`, `--spark-height`, `--spark-gap` and `--spark-width`.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.

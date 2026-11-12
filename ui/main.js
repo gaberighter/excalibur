@@ -105,7 +105,13 @@ function prune(points, now) {
   while (points.length && points[0].time_ms < now - Sparkline.WINDOW_MS) points.shift();
 }
 
-function showWarnings(warnings) {
+const themeEl = document.getElementById("theme");
+// Warnings come from two places and are shown together.
+let engineWarnings = [];
+let themeWarnings = [];
+
+function showWarnings() {
+  const warnings = [...engineWarnings, ...themeWarnings];
   warningsEl.hidden = warnings.length === 0;
   warningsEl.textContent = warnings.length === 1 ? "1 warning" : `${warnings.length} warnings`;
   warningsEl.title = warnings.join("\n");
@@ -121,7 +127,19 @@ async function refresh() {
     rows.set(plugin.name, row);
     drawRow(row);
   }
-  showWarnings(snapshot.warnings);
+  engineWarnings = snapshot.warnings;
+  showWarnings();
+  await fitWindow();
+}
+
+/** Puts on a theme: its stylesheet, and the corner radius from theme.toml. */
+async function applyTheme(theme) {
+  themeEl.textContent = theme.css;
+  document.documentElement.style.setProperty("--window-radius", `${theme.radius}px`);
+  document.documentElement.dataset.theme = theme.id;
+  themeWarnings = theme.warnings;
+  showWarnings();
+  // A theme can change the size of everything.
   await fitWindow();
 }
 
@@ -149,6 +167,15 @@ function onSample(sample) {
 }
 
 async function start() {
+  await listen("theme", ({ payload }) => applyTheme(payload));
+  await applyTheme(await invoke("theme"));
+  window.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    invoke("show_menu");
+  });
+  // The window's width changes with the theme, which can re-wrap the rows.
+  window.addEventListener("resize", () => fitWindow());
+
   await listen("engine", ({ payload }) => {
     if (payload.type === "sample") onSample(payload);
     // Plugins were loaded or reloaded.

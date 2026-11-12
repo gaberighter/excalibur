@@ -1,9 +1,7 @@
-/* Stand-in look until themes are loaded from theme folders (phase 5).
-   These are the custom properties a theme sets. */
+/* Plain: a solid panel with no blur, dark or light to match the system. */
 
 :root {
   --surface: #1c1f26;
-  /* An opaque colour close to the surface, for rings drawn over it. */
   --surface-solid: #1c1f26;
   --text: #f2f4f8;
   --text-muted: #9aa3b2;
@@ -12,9 +10,9 @@
 
   --font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --value-weight: 600;
-  --pad: 14px;
-  --row-gap: 12px;
-  --spark-height: 22px;
+  --pad: 16px;
+  --row-gap: 14px;
+  --spark-height: 24px;
   --spark-gap: 4px;
   --spark-width: 1.5px;
 }

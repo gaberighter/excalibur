@@ -2,7 +2,7 @@
 
 A small floating window for macOS that shows system metrics (CPU, memory, storage, temperature, network, GPU) in one place, with drop-in plugins and themes.
 
-The project is at an early stage: the `stats-probe` helper reports all seven metrics, and the app itself is still an empty window.
+The project is at an early stage: the window shows live metrics with sparklines and two themes, but it is not yet borderless or packaged for installation.
 
 ## Documents
 

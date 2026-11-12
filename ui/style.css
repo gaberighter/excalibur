@@ -7,8 +7,16 @@ body {
   height: 100%;
 }
 
+/* The window itself is transparent; the theme decides what shows behind
+   the page, through `--surface` and the window material in theme.toml. */
+html {
+  background: transparent;
+}
+
 body {
   box-sizing: border-box;
+  /* Set from the radius in theme.toml, so the page and the window agree. */
+  border-radius: var(--window-radius, 0);
   display: flex;
   flex-direction: column;
   padding: var(--pad);
