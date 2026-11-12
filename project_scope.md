@@ -41,7 +41,7 @@ Temperature and GPU have no official public API on Apple Silicon. The app tries 
 - Frosted glass by default.
 - The look is defined by a theme, not hard-coded. Themes can be added later and switched quickly.
 - A theme also chooses the layout: rows with sparklines, one compact line per metric, or a small round window of concentric arcs.
-- Right-clicking the window gives a menu to switch theme, reload plugins, open the config folder and quit.
+- Right-clicking the window gives a menu to switch theme, pick an accent colour, reload plugins, open the config folder and quit.
 
 ### Extensibility
 

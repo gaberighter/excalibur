@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
+pub mod accent;
 pub mod engine;
 pub mod placement;
 pub mod scaffold;
@@ -14,7 +15,7 @@ use engine::{Engine, Event, Paths};
 use placement::Area;
 use serde::Serialize;
 use state::State;
-use tauri::menu::{CheckMenuItemBuilder, ContextMenu, MenuBuilder};
+use tauri::menu::{CheckMenuItemBuilder, ContextMenu, MenuBuilder, SubmenuBuilder};
 use tauri::window::{EffectState, EffectsBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use theme::Theme;
@@ -104,6 +105,10 @@ const ENGINE_EVENT: &str = "engine";
 const THEME_EVENT: &str = "theme";
 /// Menu item ids for themes are this prefix followed by the theme's id.
 const THEME_ITEM_PREFIX: &str = "theme:";
+/// Menu item ids for accents are this prefix followed by the preset's id.
+const ACCENT_ITEM_PREFIX: &str = "accent:";
+/// The accent item that goes back to the colour set in config.
+const ACCENT_FROM_CONFIG: &str = "config";
 const RELOAD_ITEM: &str = "reload";
 const OPEN_CONFIG_ITEM: &str = "open-config";
 const QUIT_ITEM: &str = "quit";
@@ -210,6 +215,22 @@ struct ThemeState {
     /// Where the theme picked from the menu is remembered (D40).
     state_file: PathBuf,
     current: Mutex<Active>,
+    accent: Mutex<AccentChoice>,
+}
+
+/// The two places an accent can come from (D57).
+#[derive(Default)]
+struct AccentChoice {
+    /// Picked from the menu and remembered in `state.toml`.
+    picked: Option<String>,
+    /// Set in `config.toml`.
+    config: Option<String>,
+}
+
+impl AccentChoice {
+    fn in_force(&self) -> &str {
+        accent::in_force(self.picked.as_deref(), self.config.as_deref())
+    }
 }
 
 struct Active {
@@ -234,6 +255,21 @@ impl ThemeState {
             warnings: discovered.warnings,
         }
     }
+
+    /// What the page needs to wear the theme and accent in use.
+    fn payload(&self) -> ThemePayload {
+        let active = self.current.lock().unwrap();
+        ThemePayload {
+            id: active.theme.id.clone(),
+            name: active.theme.name.clone(),
+            css: active.theme.css.clone(),
+            radius: active.theme.radius,
+            width: active.theme.width,
+            layout: active.theme.layout,
+            accent: accent::colours(self.accent.lock().unwrap().in_force()),
+            warnings: active.warnings.clone(),
+        }
+    }
 }
 
 /// What the page needs to wear a theme.
@@ -245,27 +281,15 @@ struct ThemePayload {
     radius: f64,
     width: f64,
     layout: theme::Layout,
+    /// The user's accent colour, if they have one; otherwise the theme's own.
+    accent: Option<accent::Colours>,
     warnings: Vec<String>,
-}
-
-impl From<&Active> for ThemePayload {
-    fn from(active: &Active) -> Self {
-        ThemePayload {
-            id: active.theme.id.clone(),
-            name: active.theme.name.clone(),
-            css: active.theme.css.clone(),
-            radius: active.theme.radius,
-            width: active.theme.width,
-            layout: active.theme.layout,
-            warnings: active.warnings.clone(),
-        }
-    }
 }
 
 /// The theme in use, for a window that has just loaded.
 #[tauri::command]
 fn theme(state: tauri::State<ThemeState>) -> ThemePayload {
-    ThemePayload::from(&*state.current.lock().unwrap())
+    state.payload()
 }
 
 /// Applies the parts of a theme that belong to the window, not the page:
@@ -293,10 +317,8 @@ fn apply_to_window(app: &AppHandle, theme: &Theme) -> tauri::Result<()> {
 fn switch_theme(app: &AppHandle, id: &str) {
     let state = app.state::<ThemeState>();
     let active = state.load(id);
-    let remembered = State {
-        theme: Some(active.theme.id.clone()),
-    };
-    if let Err(e) = remembered.save(&state.state_file) {
+    let id = active.theme.id.clone();
+    if let Err(e) = State::update(&state.state_file, |remembered| remembered.theme = Some(id)) {
         log::warn!("could not remember the chosen theme: {e}");
     }
     if let Err(e) = apply_to_window(app, &active.theme) {
@@ -305,11 +327,27 @@ fn switch_theme(app: &AppHandle, id: &str) {
             active.theme.id
         );
     }
-    let payload = ThemePayload::from(&active);
     *state.current.lock().unwrap() = active;
-    if let Err(e) = app.emit(THEME_EVENT, payload) {
+    send_theme(app);
+}
+
+fn send_theme(app: &AppHandle) {
+    if let Err(e) = app.emit(THEME_EVENT, app.state::<ThemeState>().payload()) {
         log::warn!("could not send the theme to the window: {e}");
     }
+}
+
+/// Changes the accent colour while the app is running, and remembers the
+/// choice. `picked` is a preset's id, `theme` for each theme's own colour,
+/// or `None` to go back to whatever config says.
+fn pick_accent(app: &AppHandle, picked: Option<String>) {
+    let state = app.state::<ThemeState>();
+    let remembered = picked.clone();
+    if let Err(e) = State::update(&state.state_file, |state| state.accent = remembered) {
+        log::warn!("could not remember the chosen accent: {e}");
+    }
+    state.accent.lock().unwrap().picked = picked;
+    send_theme(app);
 }
 
 /// Shows the right-click menu (D24). Themes are listed afresh each time, so
@@ -326,7 +364,10 @@ fn show_menu(window: tauri::Window, state: tauri::State<ThemeState>) -> Result<(
                 .map_err(|e| e.to_string())?;
         menu = menu.item(&item);
     }
+    let accents = accent_menu(&window, &state).map_err(|e| e.to_string())?;
     let menu = menu
+        .separator()
+        .item(&accents)
         .separator()
         .text(RELOAD_ITEM, "Reload Plugins")
         .text(OPEN_CONFIG_ITEM, "Open Config Folder")
@@ -335,6 +376,40 @@ fn show_menu(window: tauri::Window, state: tauri::State<ThemeState>) -> Result<(
         .build()
         .map_err(|e| e.to_string())?;
     menu.popup(window).map_err(|e| e.to_string())
+}
+
+/// The accent colours, with the one in force ticked.
+fn accent_menu(
+    window: &tauri::Window,
+    state: &ThemeState,
+) -> tauri::Result<tauri::menu::Submenu<tauri::Wry>> {
+    let choice = state.accent.lock().unwrap();
+    let in_force = choice.in_force();
+    // Ticked when the colour comes from config and not from this menu.
+    let from_config = choice.picked.is_none() && choice.config.is_some();
+    let item = |id: &str, name: &str, checked: bool| {
+        CheckMenuItemBuilder::with_id(format!("{ACCENT_ITEM_PREFIX}{id}"), name)
+            .checked(checked)
+            .build(window)
+    };
+
+    let mut menu = SubmenuBuilder::new(window, "Accent Color").item(&item(
+        accent::THEME_DEFAULT,
+        "Theme Default",
+        !from_config && in_force == accent::THEME_DEFAULT,
+    )?);
+    if choice.config.is_some() {
+        menu = menu.item(&item(ACCENT_FROM_CONFIG, "From config.toml", from_config)?);
+    }
+    menu = menu.separator();
+    for preset in &accent::PRESETS {
+        menu = menu.item(&item(
+            preset.id,
+            preset.name,
+            !from_config && in_force == preset.id,
+        )?);
+    }
+    menu.build()
 }
 
 /// Opens the user's folder in the file manager, creating it first if it is
@@ -364,6 +439,21 @@ fn on_menu_item(app: &AppHandle, id: &str) {
         _ => {
             if let Some(theme) = id.strip_prefix(THEME_ITEM_PREFIX) {
                 switch_theme(app, theme);
+            } else if let Some(accent) = id.strip_prefix(ACCENT_ITEM_PREFIX) {
+                let has_config = app
+                    .state::<ThemeState>()
+                    .accent
+                    .lock()
+                    .unwrap()
+                    .config
+                    .is_some();
+                let picked = match accent {
+                    ACCENT_FROM_CONFIG => None,
+                    // Only worth remembering when there is a config colour to override.
+                    accent::THEME_DEFAULT if !has_config => None,
+                    other => Some(other.to_string()),
+                };
+                pick_accent(app, picked);
             }
         }
     }
@@ -398,11 +488,16 @@ pub fn run() {
             // The theme picked from the menu wins over the one in config (D40).
             let (config, _) = Config::load(&user_dir.join(config::FILE_NAME));
             let state_file = user_dir.join(state::FILE_NAME);
-            let wanted = State::load(&state_file).theme.unwrap_or(config.theme);
+            let remembered = State::load(&state_file);
+            let wanted = remembered.theme.unwrap_or(config.theme);
             let themes = ThemeState {
                 user: paths.user_themes(),
                 bundled: paths.bundled_themes,
                 state_file,
+                accent: Mutex::new(AccentChoice {
+                    picked: remembered.accent,
+                    config: config.accent,
+                }),
                 current: Mutex::new(Active {
                     theme: Theme::embedded_default(),
                     warnings: Vec::new(),

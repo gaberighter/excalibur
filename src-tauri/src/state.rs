@@ -16,6 +16,10 @@ pub struct State {
     /// The theme last picked from the menu. Takes precedence over `theme`
     /// in `config.toml`.
     pub theme: Option<String>,
+    /// The accent last picked from the menu: a preset's id, or `theme` for
+    /// each theme's own colour. Takes precedence over `accent` in
+    /// `config.toml`.
+    pub accent: Option<String>,
 }
 
 impl State {
@@ -25,6 +29,13 @@ impl State {
             .ok()
             .and_then(|text| toml::from_str(&text).ok())
             .unwrap_or_default()
+    }
+
+    /// Changes what is remembered, keeping everything else in the file.
+    pub fn update(file: &Path, change: impl FnOnce(&mut State)) -> Result<(), String> {
+        let mut state = State::load(file);
+        change(&mut state);
+        state.save(file)
     }
 
     /// Creates the folder if it does not exist yet.
@@ -53,10 +64,26 @@ mod tests {
         let file = dir.path().join("not-yet-there").join(FILE_NAME);
         let state = State {
             theme: Some("plain".into()),
+            accent: None,
         };
         state.save(&file).unwrap();
         assert_eq!(State::load(&file), state);
         assert!(std::fs::read_to_string(&file).unwrap().starts_with('#'));
+    }
+
+    #[test]
+    fn update_changes_one_thing_and_keeps_the_rest() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join(FILE_NAME);
+        State::update(&file, |state| state.theme = Some("plain".into())).unwrap();
+        State::update(&file, |state| state.accent = Some("orange".into())).unwrap();
+        let state = State::load(&file);
+        assert_eq!(state.theme.as_deref(), Some("plain"));
+        assert_eq!(state.accent.as_deref(), Some("orange"));
+
+        State::update(&file, |state| state.accent = None).unwrap();
+        assert_eq!(State::load(&file).accent, None);
+        assert_eq!(State::load(&file).theme.as_deref(), Some("plain"));
     }
 
     #[test]

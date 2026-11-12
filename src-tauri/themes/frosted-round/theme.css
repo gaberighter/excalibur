@@ -7,8 +7,9 @@
   --surface-solid: #2b2e36;
   --text: #f5f6f8;
   --text-muted: rgb(236 239 245 / 0.62);
-  --spark-line: #8ab8ff;
-  --spark-fill: rgb(138 184 255 / 0.18);
+  /* The accent picked by the user, or this theme's own colour. */
+  --spark-line: var(--accent, #8ab8ff);
+  --spark-fill: color-mix(in srgb, var(--spark-line) 18%, transparent);
   /* The unfilled part of an arc. */
   --track: rgb(255 255 255 / 0.14);
 

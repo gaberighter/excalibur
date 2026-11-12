@@ -13,6 +13,9 @@ const MIN_INTERVAL_SECS: f64 = 0.1;
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub theme: String,
+    /// The colour of sparklines and arcs: a preset's name, or a colour such
+    /// as `#ff8800`. Without it each theme uses its own (D57).
+    pub accent: Option<String>,
     /// Default seconds between refreshes (D18).
     pub interval: f64,
     /// Seconds before a running plugin is killed (D28).
@@ -30,6 +33,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             theme: "frosted".into(),
+            accent: None,
             interval: 2.0,
             timeout: 5.0,
             plugins: [
@@ -66,6 +70,15 @@ impl Config {
         }
         if !(config.timeout.is_finite() && config.timeout > 0.0) {
             return Err("'timeout' must be greater than zero".into());
+        }
+        if let Some(accent) = &config.accent
+            && !crate::accent::is_valid(accent)
+        {
+            let presets: Vec<&str> = crate::accent::PRESETS.iter().map(|p| p.id).collect();
+            return Err(format!(
+                "'accent' must be a colour such as \"#ff8800\" or one of: {}",
+                presets.join(", ")
+            ));
         }
         Ok(config)
     }
@@ -138,6 +151,16 @@ mod tests {
         assert!(Config::parse("timeout = -1").is_err());
         assert!(Config::parse("[intervals]\ncpu = 0.01").is_err());
         assert!(Config::parse("colour = \"red\"").is_err());
+        assert!(Config::parse("accent = \"mauve\"").is_err());
+    }
+
+    #[test]
+    fn accent_can_be_a_preset_or_a_colour() {
+        assert_eq!(Config::default().accent, None);
+        let preset = Config::parse("accent = \"orange\"").unwrap();
+        assert_eq!(preset.accent.as_deref(), Some("orange"));
+        let colour = Config::parse("accent = \"#ff8800\"").unwrap();
+        assert_eq!(colour.accent.as_deref(), Some("#ff8800"));
     }
 
     #[test]

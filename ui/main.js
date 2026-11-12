@@ -348,6 +348,15 @@ async function applyTheme(next) {
   root.style.setProperty("--window-radius", `${theme.radius}px`);
   root.dataset.theme = theme.id;
   root.dataset.layout = theme.layout;
+  // The user's accent, for themes to use in place of their own colour. A
+  // theme on a light surface takes the darker of the two.
+  if (theme.accent) {
+    root.style.setProperty("--accent", theme.accent.on_dark);
+    root.style.setProperty("--accent-on-light", theme.accent.on_light);
+  } else {
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-on-light");
+  }
   themeWarnings = theme.warnings;
   rebuild();
   // A theme can change the size of everything.

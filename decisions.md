@@ -64,6 +64,7 @@ All entries below were decided on 2026-11-11.
 | D54 | Sparkline scale | Sparklines always fit their own data (amends D46) |
 | D55 | Inverted fill | Optional `invert` in the manifest; the storage arc fills with used space |
 | D56 | Compact layout | One line per metric, as the Frosted Compact theme |
+| D57 | Accent colour | Presets in the right-click menu; one accent for all themes; colours lines and arcs |
 
 ## Details
 
@@ -569,6 +570,18 @@ Decided on 2026-11-11, as a second compact option beside the round window (D51),
 - **Measured:** 220 × 159 with the seven built-ins, about 43 % of the area of the rows layout.
 - **Implementation:** it reuses the rows layout's code and differs only in the stylesheet.
 
+### D57. An accent colour, picked from the menu
+
+Decided on 2026-11-11. The right-click menu gains an "Accent Color" submenu: Theme Default, then nine presets (Blue, Teal, Green, Yellow, Orange, Red, Pink, Purple, Graphite). The four built-in themes (Frosted, Frosted Compact, Frosted Round, Plain) were agreed as the default set at the same time.
+
+- **One accent for all themes.** It follows the user from theme to theme. Rejected: remembering an accent per theme.
+- **It colours lines and arcs:** the sparkline and its faint fill, the hover dot, and the filled part of each arc. Text keeps the theme's own colours. Rejected: colouring the values too.
+- **Rejected for the picker:** the macOS colour panel, alone or as a "Custom…" item.
+- **Any other colour** can be set by hand as `accent = "#ff8800"` in `config.toml`, which also accepts a preset's name. When config sets one, the submenu shows a "From config.toml" item.
+- **Remembered in `state.toml`**, where it takes precedence over config, as the theme does (D40).
+- **How themes use it:** the app gives the page two custom properties, `--accent` and `--accent-on-light`, and a theme's stylesheet uses them where it wants the accent, falling back to its own colour: `--spark-line: var(--accent, #8ab8ff)`. A theme that ignores them is unaffected.
+- **Two colours per preset:** a lighter one for dark surfaces and a darker one for light surfaces, such as Plain in light mode. A test checks that every preset has at least 3:1 contrast against the built-in themes' surfaces. A colour set by hand is used as it is everywhere, and is not checked.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
@@ -709,6 +722,10 @@ Implementation choices not previously agreed:
 - **Pointing at an arc** names it in full in the middle of the disc, with its value, and dims the other arcs. This replaced a system tooltip, which did not appear when tried by hand.
 - **Warnings** are shown in the arcs layout as a count in the middle of the disc, with the details on hover.
 - **A new theme variable, `--track`**, is the colour of the unfilled part of an arc.
+
+## Accent colour results
+
+Built on 2026-11-11 (D57). Checked from captures of the app's own window: the Orange preset on Frosted Round, a hand-written colour (`#ff3ea5`) on Frosted Compact, and a remembered Green taking precedence over Red in config on Frosted. The submenu itself needs a right-click and has not been checked by hand.
 
 ## Open questions
 

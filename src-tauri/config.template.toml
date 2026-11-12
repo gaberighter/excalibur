@@ -6,6 +6,12 @@
 # the right-click menu, that choice is used instead.
 # theme = "frosted"
 
+# Colour of the sparklines and arcs: blue, teal, green, yellow, orange, red,
+# pink, purple or graphite, or any colour written like "#ff8800". Without it
+# each theme uses its own. A colour picked from the right-click menu is used
+# instead. For example:
+# accent = "orange"
+
 # Seconds between refreshes, unless a plugin or [intervals] says otherwise.
 # interval = 2.0
 

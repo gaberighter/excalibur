@@ -61,10 +61,12 @@ mod tests {
             .collect::<Vec<_>>()
             .join("\n");
         let config = Config::parse(&uncommented).unwrap();
-        // The [intervals] lines are an example, not a default.
+        // The [intervals] and accent lines are examples, not defaults.
         assert_eq!(config.intervals.len(), 2);
+        assert_eq!(config.accent.as_deref(), Some("orange"));
         let without_example = Config {
             intervals: BTreeMap::new(),
+            accent: None,
             ..config
         };
         assert_eq!(without_example, Config::default());

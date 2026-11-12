@@ -5,8 +5,9 @@
   --surface-solid: #1c1f26;
   --text: #f2f4f8;
   --text-muted: #9aa3b2;
-  --spark-line: #6ea8fe;
-  --spark-fill: rgb(110 168 254 / 0.16);
+  /* The accent picked by the user, or this theme's own colour. */
+  --spark-line: var(--accent, #6ea8fe);
+  --spark-fill: color-mix(in srgb, var(--spark-line) 16%, transparent);
   /* The unfilled part of an arc. */
   --track: rgb(255 255 255 / 0.14);
 
@@ -25,8 +26,8 @@
     --surface-solid: #f5f6f8;
     --text: #15181e;
     --text-muted: #5d6675;
-    --spark-line: #2563eb;
-    --spark-fill: rgb(37 99 235 / 0.12);
+    --spark-line: var(--accent-on-light, #2563eb);
+    --spark-fill: color-mix(in srgb, var(--spark-line) 12%, transparent);
     --track: rgb(0 0 0 / 0.1);
   }
 }
