@@ -2,7 +2,19 @@
 
 A small floating window for macOS that shows system metrics (CPU, memory, storage, temperature, network, GPU) in one place, with drop-in plugins and themes.
 
-The project is at an early stage: the window shows live metrics with sparklines and two themes, but it is not yet borderless or packaged for installation.
+It has four built-in themes, including a compact one and a small round one, and an accent colour that follows macOS or is picked from the right-click menu.
+
+## Install
+
+On an Apple Silicon Mac, with [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask gaberighter/tap/excalibur
+```
+
+The app is not notarised by Apple. The cask clears the quarantine flag so that it opens.
+
+Excalibur has no Dock icon. Right-click its window for themes, the accent colour, the config folder and Quit.
 
 ## Documents
 
