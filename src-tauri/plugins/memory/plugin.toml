@@ -1,6 +1,8 @@
 name     = "memory"
 label    = "Memory"
+short    = "Mem"
 unit     = "GB"
 batch    = "memory"
 display  = "sparkline"
 decimals = 1
+min      = 0             # the helper reports the maximum: the memory installed

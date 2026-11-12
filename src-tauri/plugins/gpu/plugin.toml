@@ -1,5 +1,6 @@
 name     = "gpu"
 label    = "GPU"
+short    = "GPU"
 unit     = "%"
 batch    = "gpu"
 display  = "sparkline"

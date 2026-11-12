@@ -24,7 +24,7 @@ use config::Config;
 use discovery::Plugin;
 use history::{History, Point};
 use manifest::{Display, Source};
-use runner::{Exec, Reading};
+use runner::{Exec, Output, Reading};
 use sample::Tracker;
 
 /// Where the engine looks for things on disk.
@@ -43,6 +43,7 @@ pub struct Paths {
 pub struct PluginInfo {
     pub name: String,
     pub label: String,
+    pub short: String,
     pub unit: String,
     pub display: Display,
     pub decimals: u8,
@@ -58,6 +59,7 @@ impl From<&Plugin> for PluginInfo {
         PluginInfo {
             name: manifest.name.clone(),
             label: manifest.label.clone(),
+            short: manifest.short.clone(),
             unit: manifest.unit.clone(),
             display: manifest.display,
             decimals: manifest.decimals,
@@ -77,6 +79,9 @@ pub struct SampleEvent {
     pub value: Option<f64>,
     /// Why there is no value, when there is none.
     pub reason: Option<String>,
+    /// The scale the value sits on, if the plugin or its manifest gives one.
+    pub min: Option<f64>,
+    pub max: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -111,7 +116,7 @@ enum Message {
     /// A worker finished running one plugin, or one batch of them.
     Done {
         generation: u64,
-        readings: Vec<(usize, Reading)>,
+        readings: Vec<(usize, Output)>,
         at: Instant,
         time_ms: u64,
     },
@@ -318,7 +323,7 @@ impl Scheduler {
                     self.spawn_worker(move || {
                         let reading = match exec {
                             Some(exec) => runner::run_plugin(&exec),
-                            None => Reading::Unavailable(not_found),
+                            None => Reading::Unavailable(not_found).into(),
                         };
                         vec![(index, reading)]
                     });
@@ -338,7 +343,7 @@ impl Scheduler {
     }
 
     /// Runs `work` on its own thread and reports its readings back.
-    fn spawn_worker(&self, work: impl FnOnce() -> Vec<(usize, Reading)> + Send + 'static) {
+    fn spawn_worker(&self, work: impl FnOnce() -> Vec<(usize, Output)> + Send + 'static) {
         let sender = self.sender.clone();
         let generation = self.generation;
         thread::spawn(move || {
@@ -352,44 +357,50 @@ impl Scheduler {
         });
     }
 
-    fn record(
-        &self,
-        loaded: &mut Loaded,
-        index: usize,
-        reading: Reading,
-        at: Instant,
-        time_ms: u64,
-    ) {
+    fn record(&self, loaded: &mut Loaded, index: usize, output: Output, at: Instant, time_ms: u64) {
         let Some(slot) = loaded.slots.get_mut(index) else {
             return;
         };
         slot.in_flight = false;
         let manifest = &slot.plugin.manifest;
-        let sample = slot.tracker.update(manifest, reading, at);
+        // Bounds reported with the reading win over the manifest's (D52).
+        let min = output.bounds.min.or(manifest.min);
+        let max = output.bounds.max.or(manifest.max);
+        let sample = slot
+            .tracker
+            .update_within(manifest, output.reading, min, max, at);
         let point = Point {
             time_ms,
             value: sample.value,
         };
-        self.shared
-            .lock()
-            .unwrap()
-            .history
-            .entry(manifest.name.clone())
-            .or_default()
-            .push(at, point);
+        {
+            let mut shared = self.shared.lock().unwrap();
+            shared
+                .history
+                .entry(manifest.name.clone())
+                .or_default()
+                .push(at, point);
+            // So a window that loads later starts with the right scale.
+            if let Some(info) = shared.plugins.get_mut(index) {
+                info.min = min;
+                info.max = max;
+            }
+        }
         (self.on_event)(Event::Sample(SampleEvent {
             plugin: manifest.name.clone(),
             time_ms,
             value: sample.value,
             reason: sample.reason,
+            min,
+            max,
         }));
     }
 }
 
 /// One helper run for all the batch plugins that are due.
-fn run_batch(exec: Option<Exec>, batch: Vec<(usize, String)>) -> Vec<(usize, Reading)> {
+fn run_batch(exec: Option<Exec>, batch: Vec<(usize, String)>) -> Vec<(usize, Output)> {
     let Some(exec) = exec else {
-        let missing = Reading::unavailable("the stats-probe helper was not found");
+        let missing = Output::from(Reading::unavailable("the stats-probe helper was not found"));
         return batch
             .into_iter()
             .map(|(index, _)| (index, missing.clone()))
@@ -673,6 +684,31 @@ echo '{"cpu": {"value": 11}, "gpu": {"value": null, "reason": "no gpu"}}'"#,
         assert_eq!(names, ["first", "second"]);
         assert_eq!(warnings.len(), 1);
         assert_eq!(fixture.samples("second", 1)[0].value, Some(2.0));
+    }
+
+    #[test]
+    fn bounds_reported_by_a_plugin_override_the_manifest() {
+        let mut fixture = Fixture::new("");
+        fixture.add_plugin(
+            "mem",
+            "min = 0\nmax = 4",
+            r#"echo '{"value": 5.8, "max": 8}'"#,
+        );
+        fixture.add_plugin("fixed", "min = 0\nmax = 4", r#"echo '{"value": 5.8}'"#);
+        fixture.start(None);
+
+        let mem = &fixture.samples("mem", 1)[0];
+        assert_eq!(
+            (mem.value, mem.min, mem.max),
+            (Some(5.8), Some(0.0), Some(8.0))
+        );
+        // Without its own bounds, the manifest's apply and the value is clamped.
+        let fixed = &fixture.samples("fixed", 1)[0];
+        assert_eq!((fixed.value, fixed.max), (Some(4.0), Some(4.0)));
+
+        let snapshot = fixture.engine().snapshot();
+        let info = snapshot.plugins.iter().find(|p| p.name == "mem").unwrap();
+        assert_eq!(info.max, Some(8.0));
     }
 
     #[test]

@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::window::Effect;
 
 pub const SETTINGS_FILE: &str = "theme.toml";
@@ -12,8 +12,21 @@ pub const DEFAULT_ID: &str = "frosted";
 
 const DEFAULT_WIDTH: f64 = 220.0;
 const WIDTH_RANGE: std::ops::RangeInclusive<f64> = 120.0..=1000.0;
-const RADIUS_RANGE: std::ops::RangeInclusive<f64> = 0.0..=64.0;
+/// Up to half the widest window, so a theme can make the window a circle.
+const RADIUS_RANGE: std::ops::RangeInclusive<f64> = 0.0..=500.0;
 const NO_EFFECT: &str = "none";
+
+/// How the metrics are arranged in the window (D50).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Layout {
+    /// One row per metric: label, value and an optional sparkline.
+    #[default]
+    Rows,
+    /// One concentric arc per metric, in a square window. With `radius`
+    /// set to half the `width`, the window is a circle.
+    Arcs,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Theme {
@@ -27,6 +40,7 @@ pub struct Theme {
     pub radius: f64,
     /// Width of the window, in px.
     pub width: f64,
+    pub layout: Layout,
     pub css: String,
     pub builtin: bool,
 }
@@ -38,6 +52,7 @@ struct Settings {
     effect: Option<String>,
     radius: Option<f64>,
     width: Option<f64>,
+    layout: Option<Layout>,
 }
 
 impl Theme {
@@ -74,6 +89,7 @@ impl Theme {
             effect,
             radius,
             width,
+            layout: settings.layout.unwrap_or_default(),
             css: css.to_string(),
             builtin,
         })
@@ -201,6 +217,20 @@ mod tests {
         assert_eq!(theme.name, "mine");
         assert_eq!(theme.effect, None);
         assert_eq!((theme.radius, theme.width), (0.0, 220.0));
+        assert_eq!(theme.layout, Layout::Rows);
+    }
+
+    #[test]
+    fn layout_can_be_chosen() {
+        let theme = Theme::parse(
+            "round",
+            "layout = \"arcs\"\nradius = 90\nwidth = 180",
+            "",
+            false,
+        )
+        .unwrap();
+        assert_eq!(theme.layout, Layout::Arcs);
+        assert_eq!(theme.radius, 90.0);
     }
 
     #[test]
@@ -214,7 +244,8 @@ mod tests {
         for settings in [
             "effect = \"glitter\"",
             "radius = -1",
-            "radius = 500",
+            "radius = 501",
+            "layout = \"spiral\"",
             "width = 10",
             "colour = \"red\"",
             "width = \"wide\"",
@@ -239,7 +270,7 @@ mod tests {
         let bundled = Path::new(env!("CARGO_MANIFEST_DIR")).join("themes");
         let found = discover(Some(&bundled), Path::new("/nonexistent"));
         assert!(found.warnings.is_empty(), "{:?}", found.warnings);
-        assert_eq!(ids(&found.themes), ["frosted", "plain"]);
+        assert_eq!(ids(&found.themes), ["frosted", "frosted-round", "plain"]);
     }
 
     #[test]

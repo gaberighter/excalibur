@@ -9,6 +9,8 @@
   --text-muted: rgb(236 239 245 / 0.62);
   --spark-line: #8ab8ff;
   --spark-fill: rgb(138 184 255 / 0.18);
+  /* The unfilled part of an arc. */
+  --track: rgb(255 255 255 / 0.14);
 
   --font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --value-weight: 600;

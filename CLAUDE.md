@@ -17,7 +17,7 @@ EXCALIBUR_CONFIG_DIR=/some/dir cargo tauri dev # use another folder in place of 
 cargo test --workspace                   # all tests
 cargo test -p excalibur engine::sample   # one module's tests
 cargo test -p stats-probe <test_name>    # a single test in one crate
-node --test ui/sparkline.test.js         # sparkline geometry tests (Node is needed for these only)
+node --test ui/sparkline.test.js ui/arcs.test.js   # geometry tests (Node is needed for these only)
 cargo clippy --workspace
 cargo fmt --all
 ```
@@ -28,7 +28,7 @@ The engine is `src-tauri/src/engine/` and has no Tauri dependency. `mod.rs` hold
 
 App to window: `src-tauri/src/lib.rs` starts the engine and emits each `Event` to the page as an `engine` event; the page calls the `snapshot` command on load and after every `loaded` event, then appends `sample` events. `ui/sparkline.js` is pure geometry (no DOM), `ui/main.js` builds the rows, and `ui/style.css` is layout only, reading every colour, font and spacing from CSS custom properties. The window's height follows its content through the `fit_height` command.
 
-Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in themes are in `src-tauri/themes/`. `lib.rs` applies the window part of a theme (material, radius, width) and sends the stylesheet to the page, which puts it in `<style id="theme">`. There is no stylesheet for colours in `ui/`; without a theme the page has no look.
+Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in themes are in `src-tauri/themes/`. `lib.rs` applies the window part of a theme (material, radius, width) and sends the stylesheet to the page, which puts it in `<style id="theme">`. There is no stylesheet for colours in `ui/`; without a theme the page has no look. A theme also picks the layout (D50): `rows`, or `arcs` (a round window of concentric arcs, D51). In `ui/main.js` each layout is a view object (`RowsView`, `ArcsView`) with `build`, `draw`, `tick`, `showWarnings` and `height`; `ui/arcs.js` is the arcs geometry, pure like `sparkline.js`. A round window is a square one whose theme sets `radius` to half its `width`.
 
 Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
 
@@ -39,7 +39,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D49) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D53) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -60,6 +60,7 @@ Plugin model (D14–D18, D26–D28, D31, D33–D34):
 - The app runs the executable once per refresh and reads one JSON object from stdout: `{"value": 42.1}`, or `{"value": null, "reason": "…"}`. A non-zero exit or invalid output also means unavailable.
 - Plugins are stateless and report a single number. For rates, the manifest sets `kind = "counter"`, the plugin prints a running total, and the app computes the change per second. CPU usage uses this path too, by printing cumulative percent-seconds.
 - The app does no unit scaling. A plugin prints its value in the unit it wants displayed.
+- A plugin may print `min` and `max` beside `value` when its scale depends on the machine; these win over the manifest's (D52). `stats-probe` does this for memory and storage.
 - A plugin still running at its next tick causes that tick to be skipped; it is killed after a timeout (default 5 s).
 - The manifest picks the presentation: `display = "value"` or `"sparkline"`.
 

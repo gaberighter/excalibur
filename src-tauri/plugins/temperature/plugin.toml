@@ -1,6 +1,9 @@
 name     = "temperature"
 label    = "Temperature"
+short    = "Temp"
 unit     = "°C"
 batch    = "temperature"
 display  = "sparkline"
 decimals = 0
+min      = 20
+max      = 100

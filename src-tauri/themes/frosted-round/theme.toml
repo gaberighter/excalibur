@@ -1,0 +1,5 @@
+name   = "Frosted Round"
+effect = "hudWindow"
+layout = "arcs"        # one concentric arc per metric
+width  = 180           # the window is square, so this is the circle's diameter
+radius = 90            # half the width makes the window a circle

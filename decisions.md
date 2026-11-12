@@ -57,6 +57,10 @@ All entries below were decided on 2026-11-11.
 | D47 | Plugin `PATH` | Common folders appended, plus a `path` setting in config |
 | D48 | Always in front | The window floats above other windows (amends D23) |
 | D49 | Starting position | Bottom right corner of the screen |
+| D50 | Layout | Part of the theme: `layout = "rows"` or `"arcs"` in `theme.toml` |
+| D51 | Round window | A circular window of concentric arcs with curved labels, as the Frosted Round theme |
+| D52 | Scales | A plugin may report `min` and `max` with a reading; built-ins get fixed scales (extends D27) |
+| D53 | Short labels | Optional `short` in the manifest, for layouts with little room |
 
 ## Details
 
@@ -497,6 +501,44 @@ Decided on 2026-11-11. On launch the window appears in the bottom right corner o
 - **Unchanged:** the position is still not remembered between launches (D23). The window can be dragged anywhere, and returns to the corner at the next launch.
 - **Implication:** the window is created hidden and shown once its size is known, so it does not appear in one place and jump to another. When the window changes size later (a theme switch or a reload), it is moved only as far as needed to stay fully on the screen.
 
+### D50. The layout belongs to the theme
+
+Decided on 2026-11-11, while looking for ways to make the window take up less of the screen. `theme.toml` gains a `layout` setting: `"rows"` (the default: one row per metric, as built in phase 4) or `"arcs"` (D51).
+
+- **Rejected:** one layout for every theme; a separate layout setting in the menu.
+- **Why:** it keeps the rule that the look is never hard-coded (D11), and a roomy theme can sit alongside a compact one in the same menu.
+- **Implication:** a layout is code in the app, not something a theme folder can add. A theme chooses among the layouts the app offers, in the same way a plugin chooses among presentations (D10).
+
+### D51. A round window of concentric arcs
+
+Decided on 2026-11-11 from mockups. In the `arcs` layout each metric is one arc, the arcs are concentric, and each sweeps three quarters of a turn clockwise from 12 o'clock. The open quarter holds the labels, and each label follows the curve of its own ring so that it cannot leave the circle. It ships as a third built-in theme, Frosted Round, 180 px across.
+
+- **Considered and not chosen:** one line per metric; two columns of tiles; a grid, a strip or a cluster of small rings; a large CPU dial with the others round its rim; and, for the labels, short straight text, half-turn arcs, and a legend in the middle.
+- **How the window is round:** the window stays square. A theme with `radius` set to half its `width` gives both the native material and the page a circular shape, and the corners are transparent. The limit on `radius` was raised from 64 to 500 to allow this.
+- **Accepted cost:** this layout shows no history. A plugin's `display` setting is ignored in it.
+- **Implication:** with more plugins the arcs and their labels get thinner, and with many they become hard to read. The inner rings have the least room for a label (D53).
+
+### D52. Scales: a plugin may report `min` and `max` with a reading
+
+Decided on 2026-11-11. An arc needs a full mark to fill against. A plugin's output may now carry `min` and `max` beside `value`, and these take precedence over the manifest's:
+
+```
+{"value": 5.8, "max": 8.0}
+```
+
+- **Why:** some scales depend on the machine, such as the memory installed or the size of the disk, and so cannot be written in a manifest.
+- **Extends D27**, which kept the output to `value` and `reason`. Unit, label and display still belong to the manifest only.
+- **Built-in scales:** memory from 0 to the memory installed, and storage from 0 to the size of the disk (both reported by `stats-probe`); temperature from 20 to 100 °C, and CPU and GPU from 0 to 100 (in their manifests).
+- **Network has no ceiling.** In the arcs layout a metric with no maximum fills against the highest value it has shown in the last 60 seconds.
+- **Side effect on the rows layout:** by D46 a sparkline uses a fixed scale when it has both bounds. Memory and temperature now have both, so their sparklines are drawn against the whole scale and look much flatter than before, when they were stretched to fit their own small variations.
+- **Storage reads the other way round:** it reports free space (D37), so its arc is fullest when the disk is emptiest.
+
+### D53. Optional `short` label in the manifest
+
+Decided on 2026-11-11. `plugin.toml` may set `short`, a shorter label used by layouts with little room. It defaults to `label`. The built-ins use CPU, Mem, Temp, GPU, Down, Up and Disk. Extends D26.
+
+- **Why:** the innermost ring of the arcs layout has about 43 px for its label and value together.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
@@ -622,6 +664,20 @@ Implementation choices made in phase 6, agreed "for now" on 2026-11-11:
 - **The commented `config.toml`** written by Open Config Folder is kept in `src-tauri/config.template.toml`; a test checks that it matches the real defaults.
 
 A bug found and fixed: the page's surface was painted on `<body>`, which browsers spread over the whole window, so the corners outside the rounded shape were filled in. It is now painted on an inner panel.
+
+## Compact layout results
+
+The arcs layout and the Frosted Round theme were built on 2026-11-11 (D50–D53). Checked from a capture of the app's own window: a circular frosted window 180 px across, in the bottom right corner, with seven arcs and their curved labels inside the circle. At 180 × 180 it covers about 31 % of the area of the rows layout (220 × 374).
+
+Not checked, because they need a mouse: whether clicks on the transparent corners of the square window pass through to what is behind, and how dragging and the menu feel on a round window.
+
+Implementation choices not previously agreed:
+
+- **Frosted Round is a new theme**; Frosted and Plain keep the rows layout, and the default is still Frosted.
+- **Units are always shown in the arcs layout**, joined to the value with a space when the unit is a word ("5.8 GB") and without one otherwise ("9.4%", "38°C").
+- **An unavailable metric** shows its label and a dash, with an empty track. Hovering an arc shows the full label and value, or the reason there is none.
+- **Warnings** are shown in the arcs layout as a count in the middle of the disc, with the details on hover.
+- **A new theme variable, `--track`**, is the colour of the unfilled part of an arc.
 
 ## Open questions
 

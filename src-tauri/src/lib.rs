@@ -243,6 +243,8 @@ struct ThemePayload {
     name: String,
     css: String,
     radius: f64,
+    width: f64,
+    layout: theme::Layout,
     warnings: Vec<String>,
 }
 
@@ -253,6 +255,8 @@ impl From<&Active> for ThemePayload {
             name: active.theme.name.clone(),
             css: active.theme.css.clone(),
             radius: active.theme.radius,
+            width: active.theme.width,
+            layout: active.theme.layout,
             warnings: active.warnings.clone(),
         }
     }

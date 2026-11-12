@@ -1,8 +1,10 @@
 name     = "net-up"
 label    = "Upload"
+short    = "Up"
 unit     = "MB/s"
 batch    = "net-up"
 kind     = "counter"
 display  = "sparkline"
 interval = 1.0
 decimals = 2
+min      = 0

@@ -39,6 +39,8 @@ pub enum Source {
 pub struct Manifest {
     pub name: String,
     pub label: String,
+    /// A shorter label for layouts with little room. Defaults to `label`.
+    pub short: String,
     pub unit: String,
     pub source: Source,
     pub display: Display,
@@ -55,6 +57,7 @@ pub struct Manifest {
 struct Raw {
     name: Option<String>,
     label: Option<String>,
+    short: Option<String>,
     unit: Option<String>,
     command: Option<Vec<String>>,
     batch: Option<String>,
@@ -112,8 +115,10 @@ impl Manifest {
             return Err("'min' must be less than 'max'".into());
         }
 
+        let label = raw.label.unwrap_or_else(|| name.clone());
         Ok(Manifest {
-            label: raw.label.unwrap_or_else(|| name.clone()),
+            short: raw.short.unwrap_or_else(|| label.clone()),
+            label,
             name,
             unit: raw.unit.unwrap_or_default(),
             source,
@@ -143,7 +148,8 @@ mod tests {
         let manifest = Manifest::parse(
             r#"
             name     = "cpu"
-            label    = "CPU"
+            label    = "Processor"
+            short    = "CPU"
             unit     = "%"
             batch    = "cpu"
             display  = "sparkline"
@@ -157,7 +163,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(manifest.name, "cpu");
-        assert_eq!(manifest.label, "CPU");
+        assert_eq!(manifest.label, "Processor");
+        assert_eq!(manifest.short, "CPU");
         assert_eq!(manifest.source, Source::Batch("cpu".into()));
         assert_eq!(manifest.display, Display::Sparkline);
         assert_eq!(manifest.kind, Kind::Counter);
@@ -170,6 +177,7 @@ mod tests {
         let manifest = Manifest::parse(r#"command = ["run"]"#, "uptime").unwrap();
         assert_eq!(manifest.name, "uptime");
         assert_eq!(manifest.label, "uptime");
+        assert_eq!(manifest.short, "uptime");
         assert_eq!(manifest.unit, "");
         assert_eq!(manifest.source, Source::Command(vec!["run".into()]));
         assert_eq!(manifest.display, Display::Value);

@@ -1,5 +1,6 @@
 name     = "cpu"
 label    = "CPU"
+short    = "CPU"
 unit     = "%"
 batch    = "cpu"
 kind     = "counter"

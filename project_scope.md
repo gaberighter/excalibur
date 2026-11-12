@@ -40,6 +40,7 @@ Temperature and GPU have no official public API on Apple Silicon. The app tries 
 - A small floating window with no title bar and no Dock icon. It stays in front of other windows and starts in the bottom right corner of the screen.
 - Frosted glass by default.
 - The look is defined by a theme, not hard-coded. Themes can be added later and switched quickly.
+- A theme also chooses the layout: rows with sparklines, or a small round window of concentric arcs.
 - Right-clicking the window gives a menu to switch theme, reload plugins, open the config folder and quit.
 
 ### Extensibility

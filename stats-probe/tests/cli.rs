@@ -32,14 +32,25 @@ fn run_json(args: &[&str]) -> Value {
     serde_json::from_str(&stdout).expect("output should be JSON")
 }
 
-/// A reading is `{"value": <number>}` or `{"value": null, "reason": <text>}`.
-/// Sensors differ between machines, so either is accepted.
+/// A reading is `{"value": <number>}`, optionally with a `"max"`, or
+/// `{"value": null, "reason": <text>}`. Sensors differ between machines, so
+/// either is accepted.
 fn assert_reading_shape(name: &str, reading: &Value) {
     let object = reading
         .as_object()
         .unwrap_or_else(|| panic!("{name} should be an object"));
     match &object["value"] {
-        Value::Number(_) => assert_eq!(object.len(), 1, "{name}: unexpected extra keys"),
+        Value::Number(_) => {
+            let extra: Vec<&String> = object.keys().filter(|k| *k != "value").collect();
+            assert!(
+                extra.iter().all(|k| *k == "max"),
+                "{name}: unexpected keys {extra:?}"
+            );
+            assert!(
+                object.get("max").is_none_or(Value::is_number),
+                "{name}: max should be a number"
+            );
+        }
         Value::Null => assert!(object["reason"].is_string(), "{name}: null needs a reason"),
         other => panic!("{name}: value should be a number or null, got {other}"),
     }
@@ -103,5 +114,13 @@ fn core_metrics_are_available_on_macos() {
     for name in ["cpu", "memory", "storage"] {
         let value = json[name]["value"].as_f64();
         assert!(value.is_some_and(|v| v > 0.0), "{name} should be positive");
+    }
+    // Memory and storage report what they are out of.
+    for name in ["memory", "storage"] {
+        let (value, max) = (json[name]["value"].as_f64(), json[name]["max"].as_f64());
+        assert!(
+            max >= value,
+            "{name}: max {max:?} should be at least {value:?}"
+        );
     }
 }

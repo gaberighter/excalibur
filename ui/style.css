@@ -135,3 +135,45 @@ body {
   color: var(--text-muted);
   font-size: 0.85em;
 }
+
+/* The arcs layout: one concentric arc per metric, filling a square window. */
+:root[data-layout="arcs"] #panel {
+  padding: 0;
+}
+
+:root[data-layout="arcs"] #metrics {
+  overflow: visible;
+}
+
+.arcs {
+  display: block;
+}
+
+.arc-track,
+.arc-fill {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.arc-track {
+  stroke: var(--track, var(--spark-fill));
+}
+
+.arc-fill {
+  stroke: var(--spark-line);
+}
+
+.arc-text,
+.arc-warning {
+  font-variant-numeric: tabular-nums;
+}
+
+.arc-label,
+.arc-warning {
+  fill: var(--text-muted);
+}
+
+.arc-value {
+  fill: var(--text);
+  font-weight: var(--value-weight);
+}

@@ -23,6 +23,31 @@ impl Reading {
     }
 }
 
+/// The scale a reading sits on, when the plugin reports one with it. A
+/// plugin does this when the scale depends on the machine, such as installed
+/// memory, and so cannot be written in its manifest (D52).
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct Bounds {
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+}
+
+/// Everything one run of a plugin reports.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Output {
+    pub reading: Reading,
+    pub bounds: Bounds,
+}
+
+impl From<Reading> for Output {
+    fn from(reading: Reading) -> Self {
+        Output {
+            reading,
+            bounds: Bounds::default(),
+        }
+    }
+}
+
 /// How one process is started.
 #[derive(Debug, Clone)]
 pub struct Exec {
@@ -39,16 +64,16 @@ const POLL_INTERVAL: Duration = Duration::from_millis(5);
 const MAX_OUTPUT_BYTES: u64 = 64 * 1024;
 
 /// Runs one drop-in plugin and returns its reading.
-pub fn run_plugin(exec: &Exec) -> Reading {
+pub fn run_plugin(exec: &Exec) -> Output {
     match run(exec) {
         Ok(stdout) => parse_output(&stdout),
-        Err(reason) => Reading::Unavailable(reason),
+        Err(reason) => Reading::Unavailable(reason).into(),
     }
 }
 
 /// Runs the helper once for several metrics. Every metric asked for gets a
 /// reading, even when the run as a whole fails.
-pub fn run_batch(exec: &Exec, metrics: &[String]) -> HashMap<String, Reading> {
+pub fn run_batch(exec: &Exec, metrics: &[String]) -> HashMap<String, Output> {
     let exec = Exec {
         args: metrics.to_vec(),
         ..exec.clone()
@@ -65,25 +90,35 @@ pub fn run_batch(exec: &Exec, metrics: &[String]) -> HashMap<String, Reading> {
             let reading = match &parsed {
                 Ok(object) => match object.get(metric) {
                     Some(entry) => parse_reading(entry),
-                    None => Reading::unavailable("helper did not report this metric"),
+                    None => Reading::unavailable("helper did not report this metric").into(),
                 },
-                Err(reason) => Reading::Unavailable(reason.clone()),
+                Err(reason) => Reading::Unavailable(reason.clone()).into(),
             };
             (metric.clone(), reading)
         })
         .collect()
 }
 
-/// Parses `{"value": 42.1}` or `{"value": null, "reason": "…"}`.
-pub fn parse_output(stdout: &str) -> Reading {
+/// Parses `{"value": 42.1}` or `{"value": null, "reason": "…"}`, with an
+/// optional `min` and `max`.
+pub fn parse_output(stdout: &str) -> Output {
     match serde_json::from_str::<Value>(stdout.trim()) {
         Ok(json) => parse_reading(&json),
-        Err(_) => Reading::unavailable("output was not valid JSON"),
+        Err(_) => Reading::unavailable("output was not valid JSON").into(),
     }
 }
 
-fn parse_reading(json: &Value) -> Reading {
-    match json.get("value") {
+fn parse_reading(json: &Value) -> Output {
+    let bound = |key: &str| {
+        json.get(key)
+            .and_then(Value::as_f64)
+            .filter(|b| b.is_finite())
+    };
+    let bounds = Bounds {
+        min: bound("min"),
+        max: bound("max"),
+    };
+    let reading = match json.get("value") {
         Some(Value::Number(number)) => match number.as_f64() {
             Some(value) if value.is_finite() => Reading::Value(value),
             _ => Reading::unavailable("value was not a finite number"),
@@ -95,7 +130,8 @@ fn parse_reading(json: &Value) -> Reading {
         ),
         Some(_) => Reading::unavailable("'value' was not a number or null"),
         None => Reading::unavailable("output had no 'value'"),
-    }
+    };
+    Output { reading, bounds }
 }
 
 /// Runs the process to completion and returns what it printed. Fails if it
@@ -205,15 +241,36 @@ mod tests {
 
     #[test]
     fn parses_a_value() {
-        assert_eq!(parse_output("{\"value\": 42.1}\n"), Reading::Value(42.1));
-        assert_eq!(parse_output("{\"value\": 7}"), Reading::Value(7.0));
+        assert_eq!(
+            parse_output("{\"value\": 42.1}\n").reading,
+            Reading::Value(42.1)
+        );
+        assert_eq!(parse_output("{\"value\": 7}").reading, Reading::Value(7.0));
     }
 
     #[test]
     fn parses_unavailable_with_reason() {
         assert_eq!(
-            parse_output(r#"{"value": null, "reason": "sensor not found"}"#),
+            parse_output(r#"{"value": null, "reason": "sensor not found"}"#).reading,
             Reading::unavailable("sensor not found")
+        );
+    }
+
+    #[test]
+    fn parses_bounds_reported_with_a_value() {
+        let output = parse_output(r#"{"value": 5.8, "max": 8}"#);
+        assert_eq!(output.reading, Reading::Value(5.8));
+        assert_eq!(
+            output.bounds,
+            Bounds {
+                min: None,
+                max: Some(8.0)
+            }
+        );
+        assert_eq!(parse_output(r#"{"value": 1}"#).bounds, Bounds::default());
+        assert_eq!(
+            parse_output(r#"{"value": 1, "min": "low"}"#).bounds,
+            Bounds::default()
         );
     }
 
@@ -221,7 +278,7 @@ mod tests {
     fn invalid_output_is_unavailable() {
         for output in ["", "42.1", "not json", "{}", r#"{"value": "high"}"#, "[1]"] {
             assert!(
-                matches!(parse_output(output), Reading::Unavailable(_)),
+                matches!(parse_output(output).reading, Reading::Unavailable(_)),
                 "{output:?} should be unavailable"
             );
         }
@@ -231,7 +288,10 @@ mod tests {
     fn plugin_value_is_read_from_stdout() {
         let dir = tempfile::tempdir().unwrap();
         let program = script(dir.path(), "run", r#"echo '{"value": 3.5}'"#);
-        assert_eq!(run_plugin(&exec(program, 5000)), Reading::Value(3.5));
+        assert_eq!(
+            run_plugin(&exec(program, 5000)).reading,
+            Reading::Value(3.5)
+        );
     }
 
     #[test]
@@ -248,20 +308,20 @@ mod tests {
             path_env: "/bin:/usr/bin:/custom".into(),
             ..exec(program, 5000)
         };
-        assert_eq!(run_plugin(&exec), Reading::Value(9.0));
+        assert_eq!(run_plugin(&exec).reading, Reading::Value(9.0));
     }
 
     #[test]
     fn non_zero_exit_is_unavailable() {
         let dir = tempfile::tempdir().unwrap();
         let program = script(dir.path(), "run", "echo '{\"value\": 1}'; exit 3");
-        let reason = unavailable_reason(run_plugin(&exec(program, 5000)));
+        let reason = unavailable_reason(run_plugin(&exec(program, 5000)).reading);
         assert!(reason.contains("status 3"), "{reason}");
     }
 
     #[test]
     fn missing_program_is_unavailable() {
-        let reason = unavailable_reason(run_plugin(&exec("/nonexistent/run".into(), 5000)));
+        let reason = unavailable_reason(run_plugin(&exec("/nonexistent/run".into(), 5000)).reading);
         assert!(reason.contains("could not start"), "{reason}");
     }
 
@@ -271,7 +331,7 @@ mod tests {
         // `sleep` runs as a child of the shell; both must be stopped.
         let program = script(dir.path(), "run", "sleep 30\necho '{\"value\": 1}'");
         let started = Instant::now();
-        let reason = unavailable_reason(run_plugin(&exec(program, 300)));
+        let reason = unavailable_reason(run_plugin(&exec(program, 300)).reading);
         assert!(reason.contains("timed out"), "{reason}");
         assert!(started.elapsed() < Duration::from_secs(5));
     }
@@ -281,7 +341,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let program = script(dir.path(), "run", "sleep 30 &\necho '{\"value\": 2}'");
         let started = Instant::now();
-        assert_eq!(run_plugin(&exec(program, 5000)), Reading::Value(2.0));
+        assert_eq!(
+            run_plugin(&exec(program, 5000)).reading,
+            Reading::Value(2.0)
+        );
         assert!(started.elapsed() < Duration::from_secs(5));
     }
 
@@ -295,9 +358,9 @@ mod tests {
         );
         let metrics = ["cpu", "gpu", "temp"].map(String::from);
         let readings = run_batch(&exec(program, 5000), &metrics);
-        assert_eq!(readings["cpu"], Reading::Value(10.0));
-        assert_eq!(readings["gpu"], Reading::unavailable("no gpu"));
-        assert!(matches!(readings["temp"], Reading::Unavailable(_)));
+        assert_eq!(readings["cpu"].reading, Reading::Value(10.0));
+        assert_eq!(readings["gpu"].reading, Reading::unavailable("no gpu"));
+        assert!(matches!(readings["temp"].reading, Reading::Unavailable(_)));
     }
 
     #[test]
@@ -310,7 +373,7 @@ mod tests {
         assert!(
             readings
                 .values()
-                .all(|r| matches!(r, Reading::Unavailable(_)))
+                .all(|r| matches!(r.reading, Reading::Unavailable(_)))
         );
     }
 }

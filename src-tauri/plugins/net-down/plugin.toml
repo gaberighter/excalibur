@@ -1,8 +1,10 @@
 name     = "net-down"
 label    = "Download"
+short    = "Down"
 unit     = "MB/s"
 batch    = "net-down"
 kind     = "counter"
 display  = "sparkline"
 interval = 1.0
 decimals = 2
+min      = 0

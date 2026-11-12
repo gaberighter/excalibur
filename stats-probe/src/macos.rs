@@ -50,8 +50,8 @@ fn percent_seconds(busy_ticks: u64, ticks_per_second: f64, cores: f64) -> f64 {
     busy_ticks as f64 / ticks_per_second / cores * 100.0
 }
 
-/// Memory in use, in GB (D37): app memory + wired + compressed, the same sum
-/// Activity Monitor shows as "Memory Used".
+/// Memory in use out of the memory installed, in GB (D37): app memory +
+/// wired + compressed, the same sum Activity Monitor shows as "Memory Used".
 pub fn memory() -> Reading {
     let mut stats: libc::vm_statistics64 = unsafe { mem::zeroed() };
     let mut count = libc::HOST_VM_INFO64_COUNT;
@@ -70,16 +70,25 @@ pub fn memory() -> Reading {
         return Reading::unavailable("could not read memory statistics");
     }
     // SAFETY: sysconf has no preconditions.
-    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    let (page_size, installed_pages) = unsafe {
+        (
+            libc::sysconf(libc::_SC_PAGESIZE),
+            libc::sysconf(libc::_SC_PHYS_PAGES),
+        )
+    };
     if page_size <= 0 {
         return Reading::unavailable("could not read memory page size");
     }
+    let gib = |pages: u64| pages as f64 * page_size as f64 / BYTES_PER_GIB;
     let app = (stats.internal_page_count as u64).saturating_sub(stats.purgeable_count as u64);
     let used_pages = app + stats.wire_count as u64 + stats.compressor_page_count as u64;
-    Reading::value(used_pages as f64 * page_size as f64 / BYTES_PER_GIB)
+    if installed_pages <= 0 {
+        return Reading::value(gib(used_pages));
+    }
+    Reading::value_of(gib(used_pages), gib(installed_pages as u64))
 }
 
-/// Free space on the startup volume, in GB (D37).
+/// Free space out of the size of the startup volume, in GB (D37).
 pub fn storage() -> Reading {
     let mut stats: libc::statvfs = unsafe { mem::zeroed() };
     // SAFETY: the path is a NUL-terminated string and `stats` is a valid statvfs.
@@ -87,8 +96,10 @@ pub fn storage() -> Reading {
     if status != 0 {
         return Reading::unavailable("could not read disk statistics");
     }
-    let free_bytes = stats.f_bavail as f64 * stats.f_frsize as f64;
-    Reading::value(free_bytes / BYTES_PER_GB)
+    let block_size = stats.f_frsize as f64;
+    let free_bytes = stats.f_bavail as f64 * block_size;
+    let total_bytes = stats.f_blocks as f64 * block_size;
+    Reading::value_of(free_bytes / BYTES_PER_GB, total_bytes / BYTES_PER_GB)
 }
 
 #[cfg(test)]

@@ -35,7 +35,21 @@ pub struct Tracker {
 }
 
 impl Tracker {
+    /// Uses the bounds in the manifest.
     pub fn update(&mut self, manifest: &Manifest, reading: Reading, at: Instant) -> Sample {
+        self.update_within(manifest, reading, manifest.min, manifest.max, at)
+    }
+
+    /// `min` and `max` are the bounds in force: the plugin's own from this
+    /// run if it reported any, otherwise the manifest's.
+    pub fn update_within(
+        &mut self,
+        manifest: &Manifest,
+        reading: Reading,
+        min: Option<f64>,
+        max: Option<f64>,
+        at: Instant,
+    ) -> Sample {
         let value = match reading {
             Reading::Unavailable(reason) => {
                 self.previous = None;
@@ -53,7 +67,7 @@ impl Tracker {
                 }
             }
         };
-        Sample::value(clamp(shown, manifest.min, manifest.max))
+        Sample::value(clamp(shown, min, max))
     }
 }
 
