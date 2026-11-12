@@ -19,4 +19,5 @@ Prerequisites: a current stable Rust toolchain, Xcode Command Line Tools, and th
 cargo tauri dev            # run the app
 cargo run -p stats-probe -- cpu memory   # run the helper
 cargo test --workspace     # run all tests
+scripts/build-release.sh   # build Excalibur.app and a zip of it
 ```

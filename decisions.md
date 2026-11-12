@@ -748,6 +748,29 @@ Implementation choices not previously agreed:
 
 Built on 2026-11-11 (D57). Checked from captures of the app's own window: the Orange preset on Frosted Round, a hand-written colour (`#ff3ea5`) on Frosted Compact, and a remembered Green taking precedence over Red in config on Frosted. The submenu itself needs a right-click and has not been checked by hand.
 
+## Phase 7 results: packaging
+
+The app was packaged on 2026-11-11 with `scripts/build-release.sh`. Publishing a release and the Homebrew tap are not done yet.
+
+| Check | Result |
+|---|---|
+| Contents | `Excalibur.app` holds the app binary, and as resources the `stats-probe` helper (still executable), the seven built-in plugins and the four built-in themes. |
+| Size | 11.3 MB as an app, 3.4 MB zipped. |
+| Runs away from the source tree | Unzipped into another folder, the engine loads all seven built-ins and reports values, and the window appears in the configured theme. |
+| No Dock icon | macOS reports the packaged app as a background-style app. |
+| Signature | Valid ad hoc signature over the whole bundle. |
+| Nothing written unasked | The config folder it was pointed at was left as it was. |
+
+Implementation choices made in packaging and not previously agreed:
+
+- **The helper is a resource of the app**, at `Contents/Resources/stats-probe`, not one of Tauri's "sidecar" binaries. A sidecar has to exist before the app can be compiled at all, which would make a fresh checkout unable to build or run its tests without an extra step.
+- **Bundling settings are in a second config file**, `src-tauri/tauri.bundle.conf.json`, applied only by the release script. Building the app without it gives an app with no built-in plugins.
+- **A release build never looks in the source tree.** Without its resources it has no built-in plugins and only the frosted theme compiled into it.
+- **The bundle is ad hoc signed.** This is not the Developer ID signing that D25 left out: it costs nothing, identifies no one, and does not satisfy Gatekeeper. It makes the bundle internally consistent, which Apple Silicon expects.
+- **`LSUIElement` is set in `Info.plist`**, so there is no Dock icon even for the moment before the app's own code runs (D23).
+- **The release archive is a zip** of the app, named `Excalibur-<version>-<architecture>.zip`. No `.dmg` is built.
+- **The app's icon is still Tauri's default.** It is seen only in Finder, since the app has no Dock icon.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.

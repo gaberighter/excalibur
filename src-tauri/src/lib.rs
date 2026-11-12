@@ -38,9 +38,27 @@ impl AppPaths {
     }
 }
 
-/// Where things are when running from the source tree. The bundled app's
-/// paths are worked out in the packaging phase.
-fn dev_paths() -> AppPaths {
+/// Where the app's own files are. In the packaged app the plugins, themes
+/// and helper are resources inside the bundle (D21); `resources` is that
+/// folder. Run from the source tree, they are where they are in the repo.
+fn app_paths(resources: Option<PathBuf>) -> AppPaths {
+    let Some(resources) = resources.filter(|dir| dir.join("plugins").is_dir()) else {
+        return source_tree_paths();
+    };
+    let helper = resources.join(HELPER_NAME);
+    AppPaths {
+        engine: Paths {
+            bundled_plugins: Some(resources.join("plugins")),
+            user_dir: user_dir(),
+            helper: helper.is_file().then_some(helper),
+        },
+        bundled_themes: resources.join("themes"),
+    }
+}
+
+/// The helper is built beside the app, and the rest is in the source folder.
+#[cfg(debug_assertions)]
+fn source_tree_paths() -> AppPaths {
     let source_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let helper = std::env::current_exe()
         .ok()
@@ -54,6 +72,27 @@ fn dev_paths() -> AppPaths {
         },
         bundled_themes: source_dir.join("themes"),
     }
+}
+
+/// A release build never looks in the source tree. Without its resources it
+/// has no built-in plugins, and only the theme compiled into it.
+#[cfg(not(debug_assertions))]
+fn source_tree_paths() -> AppPaths {
+    AppPaths {
+        engine: Paths {
+            bundled_plugins: None,
+            user_dir: user_dir(),
+            helper: None,
+        },
+        bundled_themes: PathBuf::new(),
+    }
+}
+
+/// The resources folder of a macOS app bundle, worked out from where the
+/// app's binary is: `Excalibur.app/Contents/MacOS/excalibur`.
+fn resources_beside_binary() -> Option<PathBuf> {
+    let exe = std::env::current_exe().ok()?;
+    Some(exe.parent()?.parent()?.join("Resources"))
 }
 
 /// `~/.config/excalibur` (D20).
@@ -70,9 +109,9 @@ fn user_dir() -> PathBuf {
 /// Runs the engine without a window and prints what it produces, for
 /// checking plugins from a terminal.
 pub fn print_samples(duration: Duration) {
-    let paths = dev_paths().engine;
+    let paths = app_paths(resources_beside_binary()).engine;
     if paths.helper.is_none() {
-        eprintln!("{HELPER_NAME} was not found beside the app; build it with `cargo build`");
+        eprintln!("{HELPER_NAME} was not found; from the source tree, build it with `cargo build`");
     }
     let _engine = Engine::start(paths, |event| match event {
         Event::Loaded { plugins, warnings } => {
@@ -481,7 +520,7 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let paths = dev_paths();
+            let paths = app_paths(app.path().resource_dir().ok());
             let user_dir = paths.engine.user_dir.clone();
             app.manage(UserDir(user_dir.clone()));
             app.manage(Placed::default());

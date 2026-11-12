@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0–6 of `implementation_plan.md` are built (results for each phase are in `decisions.md`). `stats-probe` reports all seven built-in metrics, the plugin engine runs them, and the window shows one row per plugin with live values and sparklines. The window is borderless, hidden from the Dock, always in front, and starts in the bottom right corner. A right-click menu switches themes, reloads plugins, opens the config folder and quits. Not done yet: packaging (phase 7), where the app must find its plugins, themes and helper inside the bundle instead of the source tree, and user documentation (phase 8).
+Phases 0–6 of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added afterwards (results for each are in `decisions.md`). Phase 7 is part done: `scripts/build-release.sh` produces a working `Excalibur.app` and a zip of it, but no release has been published and the Homebrew tap does not exist. Phase 8, user documentation, is not started.
 
 ## Commands
 
@@ -20,6 +20,7 @@ cargo test -p stats-probe <test_name>    # a single test in one crate
 node --test ui/sparkline.test.js ui/arcs.test.js   # geometry tests (Node is needed for these only)
 cargo clippy --workspace
 cargo fmt --all
+scripts/build-release.sh                 # build Excalibur.app with everything inside, and zip it
 ```
 
 Layout: a Cargo workspace with two members, `src-tauri/` (the app; package `excalibur`, library `excalibur_lib`) and `stats-probe/` (the helper). The frontend is static files in `ui/`, served directly by Tauri with no build step.
@@ -29,6 +30,8 @@ The engine is `src-tauri/src/engine/` and has no Tauri dependency. `mod.rs` hold
 App to window: `src-tauri/src/lib.rs` starts the engine and emits each `Event` to the page as an `engine` event; the page calls the `snapshot` command on load and after every `loaded` event, then appends `sample` events. `ui/sparkline.js` is pure geometry (no DOM), `ui/main.js` builds the rows, and `ui/style.css` is layout only, reading every colour, font and spacing from CSS custom properties. The window's height follows its content through the `fit_height` command.
 
 Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in themes are in `src-tauri/themes/`. `lib.rs` applies the window part of a theme (material, radius, width) and sends the stylesheet to the page, which puts it in `<style id="theme">`. There is no stylesheet for colours in `ui/`; without a theme the page has no look. A theme also picks the layout (D50): `rows`, `compact` (one line per metric, D56) or `arcs` (a round window of concentric arcs, D51). In `ui/main.js` each layout is drawn by a view object (`RowsView` for `rows` and `compact`, which differ only in `style.css`; `ArcsView` for `arcs`) with `build`, `draw`, `tick`, `showWarnings` and `height`; `ui/arcs.js` is the arcs geometry, pure like `sparkline.js`. A round window is a square one whose theme sets `radius` to half its `width`. The user's accent colour (D57, `accent.rs`) reaches the page as `--accent` and `--accent-on-light`; themes opt in with `var(--accent, <own colour>)`. Like the theme, the accent picked from the menu is kept in `state.toml` and wins over `config.toml`.
+
+Finding its own files: `app_paths` in `lib.rs`. The packaged app has its plugins, themes and the `stats-probe` helper as resources (`Contents/Resources`), added by `src-tauri/tauri.bundle.conf.json`, which only the release script applies. A debug build with no resources falls back to the source tree; a release build never does.
 
 Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
 

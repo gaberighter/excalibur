@@ -1,0 +1,13 @@
+{
+  "bundle": {
+    "targets": ["app"],
+    "resources": {
+      "plugins/": "plugins/",
+      "themes/": "themes/",
+      "../target/release/stats-probe": "stats-probe"
+    },
+    "macOS": {
+      "signingIdentity": "-"
+    }
+  }
+}
