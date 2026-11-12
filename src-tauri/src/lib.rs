@@ -445,19 +445,8 @@ fn on_menu_item(app: &AppHandle, id: &str) {
             if let Some(theme) = id.strip_prefix(THEME_ITEM_PREFIX) {
                 switch_theme(app, theme);
             } else if let Some(accent) = id.strip_prefix(ACCENT_ITEM_PREFIX) {
-                let has_config = app
-                    .state::<ThemeState>()
-                    .accent
-                    .lock()
-                    .unwrap()
-                    .config
-                    .is_some();
-                let picked = match accent {
-                    ACCENT_FROM_CONFIG => None,
-                    // Only worth remembering when there is a config colour to override.
-                    accent::THEME_DEFAULT if !has_config => None,
-                    other => Some(other.to_string()),
-                };
+                // "From config.toml" forgets the pick, so config applies again.
+                let picked = (accent != ACCENT_FROM_CONFIG).then(|| accent.to_string());
                 pick_accent(app, picked);
             }
         }

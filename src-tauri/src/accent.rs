@@ -96,12 +96,13 @@ fn is_hex_colour(value: &str) -> bool {
 
 /// Which setting is in force. The accent picked from the menu wins over the
 /// one in config, as it does for themes (D40). A remembered pick that no
-/// longer means anything is ignored.
+/// longer means anything is ignored. With neither, the accent follows the
+/// system (D59).
 pub fn in_force<'a>(picked: Option<&'a str>, config: Option<&'a str>) -> &'a str {
     picked
         .filter(|value| is_valid(value))
         .or(config)
-        .unwrap_or(THEME_DEFAULT)
+        .unwrap_or(SYSTEM)
 }
 
 #[cfg(test)]
@@ -167,13 +168,14 @@ mod tests {
         assert_eq!(in_force(Some("green"), Some("red")), "green");
         assert_eq!(in_force(Some(THEME_DEFAULT), Some("red")), THEME_DEFAULT);
         assert_eq!(in_force(None, Some("red")), "red");
-        assert_eq!(in_force(None, None), THEME_DEFAULT);
+        assert_eq!(in_force(None, None), SYSTEM);
+        assert_eq!(in_force(Some(THEME_DEFAULT), None), THEME_DEFAULT);
     }
 
     #[test]
     fn a_stale_pick_falls_back_to_config() {
         assert_eq!(in_force(Some("no-longer-a-preset"), Some("red")), "red");
-        assert_eq!(in_force(Some("no-longer-a-preset"), None), THEME_DEFAULT);
+        assert_eq!(in_force(Some("no-longer-a-preset"), None), SYSTEM);
     }
 
     fn luminance(hex: &str) -> f64 {

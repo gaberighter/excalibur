@@ -66,6 +66,7 @@ All entries below were decided on 2026-11-11.
 | D56 | Compact layout | One line per metric, as the Frosted Compact theme |
 | D57 | Accent colour | Presets in the right-click menu; one accent for all themes; colours lines and arcs |
 | D58 | System accent | An accent option that follows the colour chosen in System Settings |
+| D59 | Default accent | A fresh install starts on System Accent |
 
 ## Details
 
@@ -591,7 +592,14 @@ Decided on 2026-11-11. The Accent Color submenu gains "System Accent", below The
 - **Lightened on dark surfaces.** System accents are mid-tones meant for buttons, and are too dark for a thin line on a dark surface, so there the colour is mixed with white. On a light surface it is used as it is.
 - **Not checked for contrast.** The colour is the system's, so it cannot be tested ahead of time the way the presets are.
 - **Checked** from captures on Frosted Round and Plain with the system accent at its default, blue: lines and arcs are drawn in a light blue. Not checked: that the colour follows a change made in System Settings, because that would mean changing the user's settings.
-- **Still to decide:** whether a fresh install should start on System Accent instead of Theme Default.
+- **Whether it is the default** was left open here and settled by D59.
+
+### D59. A fresh install starts on System Accent
+
+Decided on 2026-11-11. When no accent has been picked from the menu and none is set in `config.toml`, the accent follows the system (D58). Before this, each theme used its own colour.
+
+- **Theme Default is still in the menu**, and `accent = "theme"` is accepted in config, for each theme's own colour.
+- **Implication:** the colours written in the built-in themes' stylesheets are now seen only when Theme Default is chosen, or by a page that does not support the system accent keyword.
 
 ## Phase 1 results
 

@@ -14,7 +14,8 @@ const MIN_INTERVAL_SECS: f64 = 0.1;
 pub struct Config {
     pub theme: String,
     /// The colour of sparklines and arcs: a preset's name, or a colour such
-    /// as `#ff8800`. Without it each theme uses its own (D57).
+    /// as `#ff8800`, `system` or `theme`. Without it the accent follows the
+    /// system (D57, D59).
     pub accent: Option<String>,
     /// Default seconds between refreshes (D18).
     pub interval: f64,
