@@ -125,15 +125,15 @@ async function refresh() {
   await fitWindow();
 }
 
-/** Asks for a window exactly as tall as the rows, so none are cut off. */
+/** Asks for a window exactly tall enough for the rows, so none are cut off. */
 async function fitWindow() {
   const style = getComputedStyle(document.body);
   const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-  let height = metricsEl.scrollHeight + padding;
+  let content = metricsEl.scrollHeight + padding;
   if (!warningsEl.hidden) {
-    height += warningsEl.offsetHeight + parseFloat(getComputedStyle(warningsEl).marginTop);
+    content += warningsEl.offsetHeight + parseFloat(getComputedStyle(warningsEl).marginTop);
   }
-  await invoke("fit_height", { height: Math.ceil(height) });
+  await invoke("fit_height", { content: Math.ceil(content), viewport: window.innerHeight });
 }
 
 function onSample(sample) {

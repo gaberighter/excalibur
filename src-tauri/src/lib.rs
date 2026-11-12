@@ -75,18 +75,25 @@ fn snapshot(engine: tauri::State<Engine>) -> engine::Snapshot {
 const MIN_WINDOW_HEIGHT: f64 = 60.0;
 const MAX_WINDOW_HEIGHT: f64 = 2000.0;
 
-/// Makes the window as tall as its content, so every row is visible however
-/// many plugins there are. The width is left alone.
+/// Makes the window tall enough for its content, so every row is visible
+/// however many plugins there are. The width is left alone.
+///
+/// `content` is the height the page needs and `viewport` the height it has.
+/// The window grows or shrinks by the difference, because with a title bar
+/// the window's own size is not the size of the page.
 #[tauri::command]
-fn fit_height(window: tauri::Window, height: f64) -> Result<(), String> {
+fn fit_height(window: tauri::Window, content: f64, viewport: f64) -> Result<(), String> {
     let scale = window.scale_factor().map_err(|e| e.to_string())?;
     let current = window
         .inner_size()
         .map_err(|e| e.to_string())?
         .to_logical::<f64>(scale);
-    let height = height.clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
+    let height = (current.height + content - viewport).clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
+    if (height - current.height).abs() < 1.0 {
+        return Ok(());
+    }
     log::info!(
-        "fitting window height to content: {} -> {height}",
+        "fitting window to content: page needs {content}, has {viewport}; window {} -> {height}",
         current.height
     );
     window
