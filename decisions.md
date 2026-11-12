@@ -608,9 +608,9 @@ Window behaviour and the menu were built on 2026-11-11. Checked from captures of
 | Remembered theme (D40) | With `theme = "frosted"` in config and `theme = "plain"` in `state.toml`, the app starts in Plain. |
 | Nothing written unasked | Launching with an empty folder leaves it empty. |
 
-Dragging, the menu items (Reload Plugins, Open Config Folder, Quit Excalibur) and remembering a theme picked from the menu need a right-click and have to be checked by hand.
+Dragging, the menu items (Reload Plugins, Open Config Folder, Quit Excalibur) and remembering a theme picked from the menu need a right-click and have to be checked by hand. The user tried the window on 2026-11-11 and reported that it looks good, without reporting on each of these individually.
 
-Implementation choices made in phase 6 and not previously agreed:
+Implementation choices made in phase 6, agreed "for now" on 2026-11-11:
 
 - **The whole window is the drag handle**, including the sparklines.
 - **The window cannot be resized by hand.** Its width comes from the theme and its height from its rows.
