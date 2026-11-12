@@ -1,0 +1,10 @@
+name     = "cpu"
+label    = "CPU"
+unit     = "%"
+batch    = "cpu"
+kind     = "counter"
+display  = "sparkline"
+interval = 1.0
+decimals = 1
+min      = 0
+max      = 100

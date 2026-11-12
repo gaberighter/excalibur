@@ -1,0 +1,6 @@
+name     = "temperature"
+label    = "Temperature"
+unit     = "°C"
+batch    = "temperature"
+display  = "sparkline"
+decimals = 0

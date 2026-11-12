@@ -1,0 +1,8 @@
+name     = "net-down"
+label    = "Download"
+unit     = "MB/s"
+batch    = "net-down"
+kind     = "counter"
+display  = "sparkline"
+interval = 1.0
+decimals = 2

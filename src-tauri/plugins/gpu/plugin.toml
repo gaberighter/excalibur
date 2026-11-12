@@ -1,0 +1,8 @@
+name     = "gpu"
+label    = "GPU"
+unit     = "%"
+batch    = "gpu"
+display  = "sparkline"
+decimals = 1
+min      = 0
+max      = 100

@@ -1,0 +1,6 @@
+name     = "memory"
+label    = "Memory"
+unit     = "GB"
+batch    = "memory"
+display  = "sparkline"
+decimals = 1

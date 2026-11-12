@@ -4,21 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0–2 of `implementation_plan.md` are complete. Phase 1 confirmed the risky parts on the M2, and `stats-probe` reports all seven built-in metrics (results for both are in `decisions.md`). The Tauri app is still an empty window: the plugin engine, display and themes do not exist yet.
+Phases 0–3 of `implementation_plan.md` are complete. Phase 1 confirmed the risky parts on the M2, `stats-probe` reports all seven built-in metrics, and the plugin engine runs and is tested (results for each phase are in `decisions.md`). The engine is not yet connected to the window, which is still empty: display, themes, the menu and packaging do not exist yet.
 
 ## Commands
 
 ```sh
 cargo tauri dev                          # run the app (needs tauri-cli v2)
 cargo run -p stats-probe -- cpu memory   # run the helper; prints one JSON object keyed by metric
-cargo build --workspace
+cargo build --workspace                  # build first: the app looks for stats-probe beside its own binary
+cargo run -p excalibur -- --print-samples 10   # run the engine without a window and print samples for 10 s
 cargo test --workspace                   # all tests
+cargo test -p excalibur engine::sample   # one module's tests
 cargo test -p stats-probe <test_name>    # a single test in one crate
 cargo clippy --workspace
 cargo fmt --all
 ```
 
 Layout: a Cargo workspace with two members, `src-tauri/` (the app; package `excalibur`, library `excalibur_lib`) and `stats-probe/` (the helper). The frontend is static files in `ui/`, served directly by Tauri with no build step.
+
+The engine is `src-tauri/src/engine/` and has no Tauri dependency. `mod.rs` holds the scheduler thread and the `Engine` handle (`start`, `reload`, `snapshot`); it reports `Event::Loaded` and `Event::Sample` through a callback. The other modules are one concern each: `manifest`, `config`, `discovery`, `command` (lookup and `PATH`), `runner` (processes, timeout, output parsing), `sample` (counter rates, clamping) and `history` (60 s window). Built-in plugin manifests are in `src-tauri/plugins/`. Engine tests use shell scripts as fake plugins and real timing, so they need a Unix shell.
 
 The project, Excalibur, is a small floating desktop window for macOS (Apple Silicon first) that shows system metrics: CPU, memory, storage, temperature, network and GPU. Its working name was `stats_gui`, which is still the name of the local folder (D42).
 

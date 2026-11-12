@@ -523,6 +523,26 @@ Cost, measured with the release build:
 
 One batched run per second with all seven metrics costs about 2.3 % of one core, against 5.5 % for seven separate processes. Temperature is the expensive metric and its run took up to 85 ms of wall-clock time; refreshing it less often than the others would lower the cost further.
 
+## Phase 3 results
+
+The plugin engine was built on 2026-11-11 as `src-tauri/src/engine/`, with 67 tests. It is not yet connected to the window.
+
+Run from a terminal with the seven built-in plugins at their D36 intervals, the engine and its helper runs together used 0.50 s of CPU time in 30 s, about 1.7 % of one core (release build).
+
+Implementation choices made in phase 3 and not previously agreed:
+
+- **Manifest defaults.** `name` defaults to the folder name, `label` to the name, `unit` to empty, `display` to `"value"`, `kind` to `"gauge"` and `decimals` to 1. A manifest with an unknown field is rejected, so a misspelt setting is reported instead of silently ignored.
+- **Shortest interval is 0.1 s**, in manifests and in config.
+- **A `command` containing a `/` is a path** relative to the plugin's folder; D38's lookup order applies to bare names only.
+- **An invalid `config.toml` is ignored as a whole**, with a warning, and the defaults are used.
+- **`path` entries in config may start with `~`.**
+- **Plugins first run immediately at start**, then at multiples of their interval counted from that moment, so plugins sharing an interval fall due together.
+- **A timed-out plugin is killed along with anything it started.** The same clean-up happens after a normal exit, so a background process left behind by a script cannot hold a run open.
+- **A counter starts again after being unavailable**: the next reading produces no value, as at start-up.
+- **Moments with no value are kept in the history as gaps**, so a sparkline can show a break instead of joining across it.
+- **Reload keeps the history** of plugins that still exist and resets their counters.
+- **Warnings** (invalid manifests, invalid config, duplicate names) are collected and handed to the window. Nothing shows them yet.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.

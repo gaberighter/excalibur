@@ -1,0 +1,7 @@
+name     = "storage"
+label    = "Storage free"
+unit     = "GB"
+batch    = "storage"
+display  = "value"
+interval = 30.0
+decimals = 0
