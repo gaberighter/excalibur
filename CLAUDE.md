@@ -28,7 +28,7 @@ The engine is `src-tauri/src/engine/` and has no Tauri dependency. `mod.rs` hold
 
 App to window: `src-tauri/src/lib.rs` starts the engine and emits each `Event` to the page as an `engine` event; the page calls the `snapshot` command on load and after every `loaded` event, then appends `sample` events. `ui/sparkline.js` is pure geometry (no DOM), `ui/main.js` builds the rows, and `ui/style.css` is layout only, reading every colour, font and spacing from CSS custom properties. The window's height follows its content through the `fit_height` command.
 
-Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in themes are in `src-tauri/themes/`. `lib.rs` applies the window part of a theme (material, radius, width) and sends the stylesheet to the page, which puts it in `<style id="theme">`. There is no stylesheet for colours in `ui/`; without a theme the page has no look. A theme also picks the layout (D50): `rows`, or `arcs` (a round window of concentric arcs, D51). In `ui/main.js` each layout is a view object (`RowsView`, `ArcsView`) with `build`, `draw`, `tick`, `showWarnings` and `height`; `ui/arcs.js` is the arcs geometry, pure like `sparkline.js`. A round window is a square one whose theme sets `radius` to half its `width`.
+Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in themes are in `src-tauri/themes/`. `lib.rs` applies the window part of a theme (material, radius, width) and sends the stylesheet to the page, which puts it in `<style id="theme">`. There is no stylesheet for colours in `ui/`; without a theme the page has no look. A theme also picks the layout (D50): `rows`, `compact` (one line per metric, D56) or `arcs` (a round window of concentric arcs, D51). In `ui/main.js` each layout is drawn by a view object (`RowsView` for `rows` and `compact`, which differ only in `style.css`; `ArcsView` for `arcs`) with `build`, `draw`, `tick`, `showWarnings` and `height`; `ui/arcs.js` is the arcs geometry, pure like `sparkline.js`. A round window is a square one whose theme sets `radius` to half its `width`.
 
 Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
 
@@ -39,7 +39,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D55) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D56) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 

@@ -207,3 +207,38 @@ body {
   font-weight: var(--value-weight);
   font-variant-numeric: tabular-nums;
 }
+
+/* The compact layout: one line per metric, with the label, sparkline and
+   value side by side. All the rows share one grid so their columns line up. */
+:root[data-layout="compact"] #metrics {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  column-gap: var(--col-gap, 8px);
+  row-gap: var(--row-gap);
+  align-items: center;
+}
+
+/* The row and its heading step aside so their parts sit on the grid. */
+:root[data-layout="compact"] .metric,
+:root[data-layout="compact"] .metric-head {
+  display: contents;
+}
+
+:root[data-layout="compact"] .metric-label {
+  grid-area: var(--row) / 1;
+}
+
+:root[data-layout="compact"] .spark {
+  grid-area: var(--row) / 2;
+  margin-top: 0;
+}
+
+:root[data-layout="compact"] .metric-reading {
+  grid-area: var(--row) / 3;
+  text-align: right;
+}
+
+/* No room for it on one line; the value itself shows the hovered point. */
+:root[data-layout="compact"] .metric-age {
+  display: none;
+}

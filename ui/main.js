@@ -64,18 +64,26 @@ function warningCount(warnings) {
   return warnings.length === 1 ? "1 warning" : `${warnings.length} warnings`;
 }
 
-/** One row per metric: label, value and an optional sparkline. */
+/**
+ * One row per metric: label, value and an optional sparkline. The `rows`
+ * and `compact` layouts share it; the stylesheet puts the sparkline under
+ * the label or beside it.
+ */
 const RowsView = {
   build() {
-    for (const metric of metrics.values()) this.buildRow(metric);
+    let row = 1;
+    for (const metric of metrics.values()) this.buildRow(metric, row++);
   },
 
-  buildRow(metric) {
+  buildRow(metric, row) {
     const { plugin } = metric;
     const root = el("section", "metric", metricsEl);
     root.setAttribute("role", "listitem");
+    // The compact layout is one grid, and places each part by its row.
+    root.style.setProperty("--row", row);
     const head = el("div", "metric-head", root);
-    el("span", "metric-label", head).textContent = plugin.label;
+    const compact = theme.layout === "compact";
+    el("span", "metric-label", head).textContent = compact ? plugin.short : plugin.label;
     const age = el("span", "metric-age", head);
     const reading = el("span", "metric-reading", head);
     const value = el("span", "metric-value", reading);

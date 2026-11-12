@@ -1,0 +1,5 @@
+name   = "Frosted Compact"
+effect = "hudWindow"
+layout = "compact"     # one line per metric: label, sparkline, value
+radius = 12
+width  = 220

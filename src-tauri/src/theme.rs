@@ -20,9 +20,12 @@ const NO_EFFECT: &str = "none";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Layout {
-    /// One row per metric: label, value and an optional sparkline.
+    /// One row per metric: label and value, with an optional sparkline
+    /// underneath.
     #[default]
     Rows,
+    /// One line per metric: label, sparkline and value side by side.
+    Compact,
     /// One concentric arc per metric, in a square window. With `radius`
     /// set to half the `width`, the window is a circle.
     Arcs,
@@ -270,7 +273,10 @@ mod tests {
         let bundled = Path::new(env!("CARGO_MANIFEST_DIR")).join("themes");
         let found = discover(Some(&bundled), Path::new("/nonexistent"));
         assert!(found.warnings.is_empty(), "{:?}", found.warnings);
-        assert_eq!(ids(&found.themes), ["frosted", "frosted-round", "plain"]);
+        assert_eq!(
+            ids(&found.themes),
+            ["frosted", "frosted-compact", "frosted-round", "plain"]
+        );
     }
 
     #[test]

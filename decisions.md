@@ -63,6 +63,7 @@ All entries below were decided on 2026-11-11.
 | D53 | Short labels | Optional `short` in the manifest, for layouts with little room |
 | D54 | Sparkline scale | Sparklines always fit their own data (amends D46) |
 | D55 | Inverted fill | Optional `invert` in the manifest; the storage arc fills with used space |
+| D56 | Compact layout | One line per metric, as the Frosted Compact theme |
 
 ## Details
 
@@ -558,6 +559,15 @@ Decided on 2026-11-11. `plugin.toml` may set `invert = true` for a value that co
 - **Rejected:** showing used space as the number in the arcs layout, which would need a second label and a second value for one plugin.
 - **Unchanged:** the rows layout, which shows "Storage free" and a number.
 - **Implication:** `invert` needs a maximum. Against a recent peak it is ignored.
+
+### D56. A compact layout: one line per metric
+
+Decided on 2026-11-11, as a second compact option beside the round window (D51), which stays as it is. `layout = "compact"` puts each metric on one line: label, sparkline and value side by side. It ships as a fourth built-in theme, Frosted Compact, 220 px wide.
+
+- **Why:** it keeps everything the rows layout shows, including history, in less than half the height.
+- **Details:** labels are the short ones (D53), so storage reads "Free". The label and value columns are as wide as their widest entry, and the sparklines share what is left, so they all line up. While a sparkline is pointed at, the value shows that point; the "12 s ago" note of the rows layout is left out for lack of room.
+- **Measured:** 220 × 159 with the seven built-ins, about 43 % of the area of the rows layout.
+- **Implementation:** it reuses the rows layout's code and differs only in the stylesheet.
 
 ## Phase 1 results
 
