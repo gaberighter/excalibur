@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phase 0 of `implementation_plan.md` is complete: the repository builds an empty Tauri window and an empty `stats-probe` helper. No metrics, plugin engine or themes exist yet.
+Phases 0 and 1 of `implementation_plan.md` are complete: phase 1 confirmed the risky parts on the M2 (results in `decisions.md`), and the repository builds an empty Tauri window and an empty `stats-probe` helper. No metrics, plugin engine or themes exist yet.
 
 ## Commands
 
@@ -25,7 +25,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D44) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D47) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -38,7 +38,7 @@ Stack: Rust with Tauri v2, and a plain HTML/CSS/JS frontend with no framework an
 Two Rust binaries:
 
 - **The Tauri app.** Discovers plugins, runs them on a schedule, turns counters into rates, keeps 60 s of history in memory for sparklines, loads themes, and sends samples to the frontend. It contains no metric-collection code of its own.
-- **`stats-probe`.** A helper that returns any of the built-in metrics. The app runs it once per refresh cycle for all built-ins that are due, not once per metric (D43; exact invocation is open question O18). All OS-specific code lives here, which is what keeps a future port to another OS contained.
+- **`stats-probe`.** A helper that returns any of the built-in metrics. The app runs it once per refresh cycle for all built-ins that are due, not once per metric (D43, D45). All OS-specific code lives here, which is what keeps a future port to another OS contained.
 
 Plugin model (D14–D18, D26–D28, D31, D33–D34):
 
@@ -64,13 +64,11 @@ Command lookup (D38): a bare `command` name in a manifest is resolved in the plu
 - **Keep OS-specific code out of the app, frontend, plugin interface and themes.**
 - **First version exclusions:** fill bars, multi-value plugins (network is two plugins, `net-down` and `net-up`), always-on-top, remembered window position, a menu bar icon, code signing.
 
-## Unverified risks
+## Phase 1 findings worth knowing
 
-These should be prototyped on the MacBook Air M2 before the plugin interface is built out, because they could change it:
-
-- Reading temperature and GPU usage without sudo.
-- Getting raw cumulative CPU time for the percent-seconds counter; the `sysinfo` crate may only expose a computed percentage.
-- Changing Tauri window effects at runtime for theme switching, and a right-click menu on a borderless, Dock-less window.
+- Temperature, GPU usage and raw CPU time are all readable without sudo on the M2: `sysinfo` components for temperature, the GPU's IORegistry entry ("Device Utilization %") for GPU, and the host statistics call in `libc` for CPU. The GPU reader has only been tried through the `ioreg` command, not from Rust.
+- Launching one process per built-in metric each second cost about 5.5 % of a core, which is why built-ins are batched (D43). Each drop-in plugin still costs a process per refresh.
+- The local branch `spike/phase1-window` holds a working prototype of the borderless frosted window, runtime theme switching and the right-click menu. It is throwaway code, but a useful reference for phases 5 and 6.
 
 ## Distribution
 

@@ -45,18 +45,15 @@ Throwaway code on the MacBook Air M2. Each item gets a short written result in `
 | 1d | What does it cost to launch about seven processes per second? Measure the app's own CPU use with dummy plugins at a 1 s interval. | Revisit D14/D15. The cheapest change is one `stats-probe` run returning all built-in metrics; the larger one is long-running plugins. |
 | 1e | Can Tauri change window effects at runtime, and does a right-click menu work on a borderless, Dock-less window? | Theme switching requires a restart of the window, or the menu moves to a keyboard shortcut. Revisit D24 if needed. |
 
-Also settle here:
+Phase 1 is complete. Results are recorded in decisions.md under "Phase 1 results", and the questions it raised are settled in D43–D47.
 
-- **O17:** confirm the optional `max` field in `plugin.toml`, needed to clamp CPU usage at 100.
-- **GPU kind:** whether `gpu` is a gauge or a counter, which depends on what 1b finds (D36).
-- **`PATH` for plugins:** how the app finds Homebrew-installed tools when launched outside a terminal (D38).
 
 **Done when:** every row of the risk table has a recorded answer, and any resulting changes to decisions are written down before phase 2 starts.
 
 ## Phase 2: `stats-probe` helper
 
 - Seven built-in metrics: `cpu`, `memory`, `storage`, `temperature`, `gpu`, `net-down`, `net-up`, with the units, decimals, display and intervals fixed in D36.
-- One run returns every metric it is asked for, so the app launches a single process per cycle for all built-ins (D43). The invocation and output shape are settled first (O18).
+- One run returns every metric it is asked for, so the app launches a single process per cycle for all built-ins (D43). The app passes the names due and gets one object keyed by name (D45).
 - Memory reports the amount used; storage reports the space free, and its label says so (D37). Temperature is the average of the die sensors (D44). GPU is read from the IORegistry as a gauge (D36).
 - Each metric is reported in the D27 shape, and the helper exits after one run. Unavailable sensors print `{"value": null, "reason": "…"}` with exit code 0.
 - Values are printed in the display unit (D31); counters print running totals in that unit (D16, D33).
@@ -78,12 +75,13 @@ The core of the app, written as plain Rust modules that can be tested without a 
 
 | Part | Responsibility | Decisions |
 |---|---|---|
-| Manifest | Parse and validate `plugin.toml`; reject bad manifests with a clear message | D26, D34, O17 |
+| Manifest | Parse and validate `plugin.toml`, including `min`, `max` and exactly one of `command` or `batch`; reject bad manifests with a clear message | D26, D34, D45, D46 |
 | Config | Load `~/.config/excalibur/config.toml`; run on defaults if it is missing or invalid | D20, D35 |
 | Discovery | Find plugins in the app bundle and the user folder; user folder wins by name; apply `disabled` and ordering | D21, D35 |
 | Command resolution | Resolve a manifest's `command`: plugin folder, then bundled helper, then `PATH` | D38 |
-| Runner | Launch the executable, capture stdout, parse the D27 object; non-zero exit or bad output means unavailable | D15, D27 |
-| Scheduler | Run each plugin at its interval; skip a tick if the previous run is still going; kill at the timeout | D18, D28 |
+| Runner | Launch the executable, capture stdout, parse the D27 object; non-zero exit or bad output means unavailable. Plugins get a `PATH` with the common Homebrew folders and any from config | D15, D27, D47 |
+| Batch runner | Run `stats-probe` once per cycle with the names of the `batch` plugins that are due, and split the keyed result | D43, D45 |
+| Scheduler | Run each plugin at its interval, aligned to a common tick so batch plugins fall due together; skip a tick if the previous run is still going; kill at the timeout | D18, D28 |
 | Rates | For counters, compute change per second; no value on the first sample; no value if the counter goes backwards | D16 |
 | History | Keep the last 60 s of samples per plugin, with timestamps, in memory | D7, D29 |
 | Reload | Re-run discovery and restart the scheduler on request | D24 |

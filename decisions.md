@@ -52,6 +52,9 @@ All entries below were decided on 2026-11-11.
 | D42 | Project name | Excalibur |
 | D43 | Built-in collection | One `stats-probe` run per refresh cycle for all built-ins (amends D9, D14, D15, D22) |
 | D44 | Temperature value | Average of the die temperature sensors |
+| D45 | Batched `stats-probe` | Names in, keyed object out; manifests opt in with `batch` |
+| D46 | Value bounds | Optional `min` and `max` in the manifest; clamp and sparkline scale |
+| D47 | Plugin `PATH` | Common folders appended, plus a `path` setting in config |
 
 ## Details
 
@@ -439,6 +442,45 @@ The M2 exposes 34 temperature sensors and no single "CPU temperature". The `temp
 - **Rejected:** the hottest die sensor.
 - **Implication:** if no die sensors are found, as may happen on other Mac models, the metric is unavailable (D6). Sensor labels on other chips need checking before the app is used on another Mac.
 
+### D45. Batched `stats-probe`: names in, keyed object out
+
+The app passes the names of the metrics due this cycle and gets back one JSON object keyed by name, each entry in the D27 shape. Resolves O18 and completes D43.
+
+```
+$ stats-probe cpu net-down net-up
+{"cpu":      {"value": 1533027.25},
+ "net-down": {"value": 4821.6},
+ "net-up":   {"value": 310.2}}
+```
+
+A manifest opts in with a `batch` field naming its metric, in place of `command`:
+
+```toml
+name  = "cpu"
+batch = "cpu"      # collected via stats-probe
+kind  = "counter"
+```
+
+- **Rejected:** `stats-probe` always returning all seven metrics (collects storage every second and metrics that are disabled); a general batch feature for any plugin (more to design, document and test).
+- **Implication:** the output is always keyed, even for one name. A user plugin that wants a built-in metric with a different label, unit handling or interval uses `batch` in its own manifest; it does not call `stats-probe` through `command`. A metric that cannot be read is returned as `{"value": null, "reason": "…"}` without affecting the others, and an unknown name exits non-zero.
+- **Implication:** a manifest must have exactly one of `command` or `batch`.
+
+### D46. Optional `min` and `max` in the manifest
+
+`plugin.toml` may set `min` and `max`. The app clamps the displayed value to them, and when both are present the sparkline uses them as a fixed vertical scale. The CPU and GPU built-ins set `min = 0` and `max = 100`. Resolves O17 and extends D26.
+
+- **Rejected:** `max` only; no clamping.
+- **Why:** CPU readings can land slightly above 100 from timing jitter (D33), and a CPU graph should always span 0–100 instead of stretching to fit its own data.
+- **Implication:** without `min` and `max`, a sparkline scales to the data in its 60 s window.
+
+### D47. `PATH` for drop-in plugins: common folders plus a config setting
+
+The app appends `/opt/homebrew/bin` and `/usr/local/bin` to the `PATH` it gives plugins, and `config.toml` can list extra folders in a `path` setting. Resolves O19 and completes D38.
+
+- **Rejected:** asking the login shell for its `PATH` at startup (slower, depends on shell config); a config setting only (Homebrew tools fail until configured).
+- **Why:** apps launched from Finder or Homebrew get a minimal `PATH`, so a plugin calling `jq` or a Homebrew `python3` would otherwise not be found.
+- **Implication:** tools installed elsewhere, such as under `~/.cargo/bin` or a version manager, need adding to `path` in config. This extends the `config.toml` contents in D35.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
@@ -453,10 +495,4 @@ Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
 
 ## Open questions
 
-O1–O16 are all resolved (D14–D35). One point is left to confirm during implementation:
-
-| # | Question | Notes |
-|---|---|---|
-| O17 | Optional `max` field in `plugin.toml` | Needed to clamp CPU usage at 100 (D33). Not yet agreed as part of the manifest. |
-| O18 | How does the batched `stats-probe` run work (D43)? | Proposed: the app passes the names of the built-ins due this cycle, e.g. `stats-probe cpu net-down net-up`, and gets one JSON object keyed by name, each entry in the D27 shape. A single name, `stats-probe cpu`, would then still be usable from a user plugin. Also to settle: how a built-in manifest says it belongs to the batch. |
-| O19 | `PATH` for drop-in plugins | How the app finds Homebrew-installed tools when launched outside a terminal (D38). Not yet tested. |
+None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.

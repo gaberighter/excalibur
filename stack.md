@@ -13,7 +13,7 @@ Items marked **confirmed** were decided during scoping. Items marked **proposed*
 | Frontend | Plain HTML/CSS/JS, no framework, no bundler | Confirmed (D4) |
 | Sparklines | Hand-drawn with inline SVG or `<canvas>`, no charting library | Proposed |
 | System metrics | `sysinfo` crate | Proposed |
-| Temperature and GPU | Best effort, source to be chosen | Open |
+| Temperature and GPU | Best effort; both readable without sudo on the M2 | Confirmed in phase 1 (D44) |
 | Built-in metrics | One Rust helper binary; one run per refresh cycle returns all built-ins that are due | Confirmed (D22, D43) |
 | Plugin data format | JSON on standard output, parsed with `serde` and `serde_json` | Confirmed (D15); crates proposed |
 | Config | `~/.config/excalibur/config.toml` | Confirmed (D20) |
@@ -47,10 +47,7 @@ Window settings the project depends on:
 | `decorations: false` | Borderless window (D23). The page must mark a drag region so the window can be moved. |
 | Hidden from the Dock | Set through the macOS activation policy (D23). |
 
-Still to verify in a prototype:
-
-- That window effects can be changed while the app is running, so switching themes does not need a restart.
-- That a right-click menu works on a borderless, Dock-less window (D24).
+Confirmed in the phase 1 prototype: window effects and width can be changed while the app is running, and a right-click menu works on a borderless, Dock-less window (D24). The prototype is on the local branch `spike/phase1-window`.
 
 ## Frontend: plain HTML/CSS/JS
 
@@ -62,14 +59,14 @@ Still to verify in a prototype:
 
 | Metric | Expected source | Status |
 |---|---|---|
-| CPU usage | Cumulative CPU time counters, printed as percent-seconds (D33). `sysinfo` reports usage as a percentage measured between refreshes, so it may not expose the raw totals; the macOS host statistics call is the fallback | To verify |
+| CPU usage | macOS host statistics call via the `libc` crate, printed as percent-seconds (D33) | Confirmed in phase 1 |
 | Memory usage | `sysinfo` | Proposed |
 | Storage | `sysinfo` | Proposed |
 | Network throughput | `sysinfo` | Proposed |
-| Temperature | `sysinfo` components, if they report on the M2 without sudo | To verify |
-| GPU usage | Undocumented IOReport interface, as used by tools like `macmon` | To verify |
+| Temperature | `sysinfo` components; average of the die sensors (D44) | Confirmed in phase 1 |
+| GPU usage | "Device Utilization %" from the GPU's IORegistry entry, read without sudo | Confirmed in phase 1 with `ioreg`; Rust reader still to write |
 
-Temperature and GPU are the risky parts of the stack. Both should be tested on the MacBook Air M2 early, before the plugin interface is fixed. If either cannot be read without sudo, it ships as unavailable (D6).
+Temperature and GPU were confirmed readable without sudo on the MacBook Air M2 in phase 1. On other Mac models they may not be, in which case they show as unavailable (D6).
 
 ## Plugins and themes
 
@@ -83,7 +80,7 @@ File formats, all defined in decisions.md:
 
 | File | Purpose | Decision |
 |---|---|---|
-| `plugin.toml` | Plugin manifest: name, label, unit, command, display, kind, interval, decimals | D26, D34 |
+| `plugin.toml` | Plugin manifest: name, label, unit, `command` or `batch`, display, kind, interval, decimals, min, max | D26, D34, D45, D46 |
 | Plugin output | `{"value": 42.1}` or `{"value": null, "reason": "…"}` | D27 |
 | `theme.toml` | Window effect, corner radius, default width | D30 |
 | `theme.css` | Colours, fonts and spacing | D19 |
