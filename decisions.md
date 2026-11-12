@@ -65,6 +65,7 @@ All entries below were decided on 2026-11-11.
 | D55 | Inverted fill | Optional `invert` in the manifest; the storage arc fills with used space |
 | D56 | Compact layout | One line per metric, as the Frosted Compact theme |
 | D57 | Accent colour | Presets in the right-click menu; one accent for all themes; colours lines and arcs |
+| D58 | System accent | An accent option that follows the colour chosen in System Settings |
 
 ## Details
 
@@ -581,6 +582,16 @@ Decided on 2026-11-11. The right-click menu gains an "Accent Color" submenu: The
 - **Remembered in `state.toml`**, where it takes precedence over config, as the theme does (D40).
 - **How themes use it:** the app gives the page two custom properties, `--accent` and `--accent-on-light`, and a theme's stylesheet uses them where it wants the accent, falling back to its own colour: `--spark-line: var(--accent, #8ab8ff)`. A theme that ignores them is unaffected.
 - **Two colours per preset:** a lighter one for dark surfaces and a darker one for light surfaces, such as Plain in light mode. A test checks that every preset has at least 3:1 contrast against the built-in themes' surfaces. A colour set by hand is used as it is everywhere, and is not checked.
+
+### D58. An accent option that follows the system
+
+Decided on 2026-11-11. The Accent Color submenu gains "System Accent", below Theme Default, and `accent = "system"` is accepted in `config.toml`. It uses the accent colour chosen in the operating system's settings. The choices made for D57 were agreed at the same time.
+
+- **How:** the page is given the web's own keyword for the system accent (`AccentColor`), so the app has no macOS-specific code for it and other operating systems are covered by the same keyword.
+- **Lightened on dark surfaces.** System accents are mid-tones meant for buttons, and are too dark for a thin line on a dark surface, so there the colour is mixed with white. On a light surface it is used as it is.
+- **Not checked for contrast.** The colour is the system's, so it cannot be tested ahead of time the way the presets are.
+- **Checked** from captures on Frosted Round and Plain with the system accent at its default, blue: lines and arcs are drawn in a light blue. Not checked: that the colour follows a change made in System Settings, because that would mean changing the user's settings.
+- **Still to decide:** whether a fresh install should start on System Accent instead of Theme Default.
 
 ## Phase 1 results
 

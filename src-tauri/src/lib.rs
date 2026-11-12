@@ -398,6 +398,11 @@ fn accent_menu(
         "Theme Default",
         !from_config && in_force == accent::THEME_DEFAULT,
     )?);
+    menu = menu.item(&item(
+        accent::SYSTEM,
+        "System Accent",
+        !from_config && in_force == accent::SYSTEM,
+    )?);
     if choice.config.is_some() {
         menu = menu.item(&item(ACCENT_FROM_CONFIG, "From config.toml", from_config)?);
     }

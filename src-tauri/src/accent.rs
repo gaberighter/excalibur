@@ -43,6 +43,15 @@ pub const PRESETS: [Preset; 9] = [
 /// Stands for "no accent of my own": each theme uses its own colour.
 pub const THEME_DEFAULT: &str = "theme";
 
+/// Stands for the accent colour chosen in the operating system's settings.
+pub const SYSTEM: &str = "system";
+/// The system's accent as the page's own colour keyword, so it follows the
+/// system setting without the app having to ask for it.
+const SYSTEM_ON_LIGHT: &str = "AccentColor";
+/// System accents are mid-tones, too dark for a line on a dark surface, so
+/// there they are lightened.
+const SYSTEM_ON_DARK: &str = "color-mix(in oklab, AccentColor 55%, white)";
+
 /// The accent as the page receives it, for dark and for light surfaces.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Colours {
@@ -50,13 +59,19 @@ pub struct Colours {
     pub on_light: String,
 }
 
-/// A preset's id, a colour written as `#rgb` or `#rrggbb`, or `theme`.
+/// A preset's id, a colour written as `#rgb` or `#rrggbb`, `system`, or `theme`.
 pub fn is_valid(value: &str) -> bool {
     value == THEME_DEFAULT || colours(value).is_some()
 }
 
 /// The colours a setting stands for, or `None` for the theme's own.
 pub fn colours(value: &str) -> Option<Colours> {
+    if value == SYSTEM {
+        return Some(Colours {
+            on_dark: SYSTEM_ON_DARK.to_string(),
+            on_light: SYSTEM_ON_LIGHT.to_string(),
+        });
+    }
     if let Some(preset) = PRESETS.iter().find(|preset| preset.id == value) {
         return Some(Colours {
             on_dark: preset.on_dark.to_string(),
@@ -97,6 +112,7 @@ mod tests {
     fn preset_ids_are_unique_and_do_not_clash_with_theme_default() {
         for (index, preset) in PRESETS.iter().enumerate() {
             assert_ne!(preset.id, THEME_DEFAULT);
+            assert_ne!(preset.id, SYSTEM);
             assert!(PRESETS[..index].iter().all(|other| other.id != preset.id));
         }
     }
@@ -114,6 +130,14 @@ mod tests {
         assert_eq!(colours.on_dark, "#FF8800");
         assert_eq!(colours.on_light, "#FF8800");
         assert!(is_valid("#f80"));
+    }
+
+    #[test]
+    fn system_follows_the_operating_system_and_is_lighter_on_dark() {
+        let colours = colours(SYSTEM).unwrap();
+        assert_eq!(colours.on_light, "AccentColor");
+        assert!(colours.on_dark.contains("AccentColor") && colours.on_dark.contains("white"));
+        assert!(is_valid(SYSTEM));
     }
 
     #[test]

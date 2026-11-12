@@ -7,8 +7,8 @@
 # theme = "frosted"
 
 # Colour of the sparklines and arcs: blue, teal, green, yellow, orange, red,
-# pink, purple or graphite, or any colour written like "#ff8800". Without it
-# each theme uses its own. A colour picked from the right-click menu is used
+# pink, purple or graphite; "system" for the accent chosen in System Settings;
+# or any colour written like "#ff8800". Without it each theme uses its own. A colour picked from the right-click menu is used
 # instead. For example:
 # accent = "orange"
 
