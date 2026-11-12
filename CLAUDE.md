@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0–6 of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added afterwards (results for each are in `decisions.md`). Phase 7 is part done: `scripts/build-release.sh` produces a working `Excalibur.app` and a zip of it, but no release has been published and the Homebrew tap does not exist. Phase 8, user documentation, is not started.
+Phases 0–7 of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added along the way (results for each are in `decisions.md`). Version 0.1.0 is published and installable with `brew install --cask gaberighter/tap/excalibur`. Not done: phase 8 (user documentation: plugin and theme guides), automatic release builds, and testing on a second Mac.
 
 ## Commands
 
@@ -91,4 +91,13 @@ Command lookup (D38): a bare `command` name in a manifest is resolved in the plu
 
 ## Distribution
 
-A personal Homebrew tap with a cask pointing at unsigned builds on GitHub Releases; the cask clears the quarantine flag. `macOSPrivateApi` is enabled in Tauri for window transparency, which is acceptable because Mac App Store distribution is not a goal.
+The app repository (`gaberighter/excalibur`) is public. Releases are unsigned builds attached to GitHub Releases, installed through the tap `gaberighter/homebrew-tap` (working copy: `~/dev/homebrew-tap`), whose cask clears the quarantine flag. `macOSPrivateApi` is enabled in Tauri for window transparency, which is acceptable because Mac App Store distribution is not a goal.
+
+Releasing a new version, by hand:
+
+1. Set the new version in `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`, commit and push.
+2. Run `scripts/build-release.sh`; it prints the archive's path and checksum.
+3. `gh release create v<version> target/release/Excalibur-<version>-arm64.zip --target main`.
+4. In the tap, set `version` and `sha256` in `Casks/excalibur.rb`, commit and push.
+
+Publishing a release and pushing to the tap are outward-facing; ask before doing either.

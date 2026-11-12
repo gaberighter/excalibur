@@ -750,7 +750,7 @@ Built on 2026-11-11 (D57). Checked from captures of the app's own window: the Or
 
 ## Phase 7 results: packaging
 
-The app was packaged on 2026-11-11 with `scripts/build-release.sh`. Publishing a release and the Homebrew tap are not done yet.
+The app was packaged on 2026-11-11 with `scripts/build-release.sh`, and version 0.1.0 was published on 2026-11-12 (see "Phase 7 results: release and tap" below).
 
 | Check | Result |
 |---|---|
@@ -770,6 +770,30 @@ Implementation choices made in packaging and not previously agreed:
 - **`LSUIElement` is set in `Info.plist`**, so there is no Dock icon even for the moment before the app's own code runs (D23).
 - **The release archive is a zip** of the app, named `Excalibur-<version>-<architecture>.zip`. No `.dmg` is built.
 - **The app's icon is still Tauri's default.** It is seen only in Finder, since the app has no Dock icon.
+
+## Phase 7 results: release and tap
+
+Version 0.1.0 was published on 2026-11-12.
+
+- **The app repository is public.** Homebrew cannot download a release from a private repository without a token on every Mac. Rejected: keeping the source private and attaching the app to the tap's releases; keeping both private.
+- **The tap is `gaberighter/homebrew-tap`**, a general tap for other tools later, chosen over one named for this app. Its working copy is in `~/dev/homebrew-tap`.
+- **Install command:** `brew install --cask gaberighter/tap/excalibur`.
+
+| Check | Result |
+|---|---|
+| Release | `v0.1.0` on GitHub with `Excalibur-0.1.0-arm64.zip`; the published file's checksum matches the local build. |
+| Install | `brew install --cask` from the tap put `Excalibur.app` in `/Applications` on the MacBook Air M2. |
+| Quarantine | The installed app has no quarantine flag (D25). |
+| Runs | Opened from `/Applications`, it shows its window with live values, using the theme and accent remembered in `~/.config/excalibur`. |
+| Cask quality | `brew audit` and `brew style` report nothing. |
+
+Not checked: installing on a second Mac, and `brew upgrade` picking up a later release. Both were in the plan's "done when" for this phase. Not done: building releases automatically with GitHub Actions.
+
+Choices made in the cask and not previously agreed:
+
+- **Apple Silicon only**, and **macOS 13 (Ventura) or later**, which is the oldest release whose web view has the colour features the themes use. Neither has been tested on anything but this Mac.
+- **`brew uninstall --zap` removes `~/.config/excalibur`**; a plain uninstall leaves it.
+- **The quarantine flag is cleared with a `postflight_steps` block**, the form current Homebrew asks for.
 
 ## Open questions
 
