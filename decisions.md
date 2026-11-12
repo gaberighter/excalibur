@@ -814,6 +814,20 @@ One thing the guides promised turned out not to be true, and was fixed in the ap
 - **Explanations are drawn inside the window.** The reason for a missing value, and the text of warnings, were system tooltips, which do not appear on a window that is not the active one. They are now a small note drawn inside the window, at the end away from the pointer. Checked by rendering the page with the note forced on; not checked with a real pointer.
 - **This is not in version 0.1.0**, which was published before it. Until a later release, the installed app shows a dash or a warning count with no explanation.
 
+## Version 0.1.1
+
+Published on 2026-11-12, with the in-window explanation notes and the guides.
+
+| Check | Result |
+|---|---|
+| Release | `v0.1.1` on GitHub; the published file's checksum matches the local build. |
+| Upgrade | After the cask was updated, `brew outdated` listed Excalibur and `brew upgrade --cask excalibur` replaced 0.1.0 with 0.1.1 in `/Applications`. This is the first time an upgrade has been tried. |
+| Runs | The upgraded app opens and shows its window in the remembered theme, with no quarantine flag. |
+
+Homebrew warned during the upgrade that the app's signer had changed and that macOS may prompt at the next launch. Each build's ad hoc signature is different, so this warning will come with every upgrade. The app opened when launched from a terminal straight afterwards; whether a prompt appeared on screen was not observed.
+
+Still not checked: an install on a second Mac.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added along the way (results for each are in `decisions.md`). Version 0.1.0 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. Not done: automatic release builds, and testing on a second Mac. `main` is ahead of 0.1.0: the in-window explanation notes are not released yet.
+All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added along the way (results for each are in `decisions.md`). Version 0.1.1 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. Not done: automatic release builds, and testing on a second Mac.
 
 ## Commands
 
