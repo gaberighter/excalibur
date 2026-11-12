@@ -578,6 +578,8 @@ Themes were built on 2026-11-11. Checked from captures of the app's own window:
 | `theme = "plain"` | Plain theme: solid dark panel, 260 px wide, roomier spacing. |
 | `theme = "does-not-exist"` | Falls back to frosted and shows "1 warning". |
 
+**Changed on 2026-11-11:** the Plain theme was given the same width and spacing as Frosted, so both windows are now 220 px wide and the same height. The 260 px figure above is how Plain was first built.
+
 Switching themes while the app is running goes through the right-click menu. It was checked by hand on 2026-11-11: the menu lists both themes with the current one ticked, and switching in either direction changes the material, colours, width and spacing without a restart, with all rows still fitting.
 
 Implementation choices made in phase 5 and not previously agreed:
