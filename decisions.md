@@ -55,6 +55,8 @@ All entries below were decided on 2026-11-11.
 | D45 | Batched `stats-probe` | Names in, keyed object out; manifests opt in with `batch` |
 | D46 | Value bounds | Optional `min` and `max` in the manifest; clamp and sparkline scale |
 | D47 | Plugin `PATH` | Common folders appended, plus a `path` setting in config |
+| D48 | Always in front | The window floats above other windows (amends D23) |
+| D49 | Starting position | Bottom right corner of the screen |
 
 ## Details
 
@@ -213,7 +215,7 @@ A single small helper binary provides all built-in metrics, one subcommand per m
 
 No title bar or traffic-light buttons, and no Dock icon or app-switcher entry. Resolves O6.
 
-- **Not in the first version:** always on top; remembering position and size.
+- **Not in the first version:** remembering position and size. Always on top was also left out here, and was added later by D48.
 - **Implication:** the window must be draggable by its body, and needs another way to quit (D24).
 
 ### D24. Controls: right-click menu on the window
@@ -481,6 +483,20 @@ The app appends `/opt/homebrew/bin` and `/usr/local/bin` to the `PATH` it gives 
 - **Why:** apps launched from Finder or Homebrew get a minimal `PATH`, so a plugin calling `jq` or a Homebrew `python3` would otherwise not be found.
 - **Implication:** tools installed elsewhere, such as under `~/.cargo/bin` or a version manager, need adding to `path` in config. This extends the `config.toml` contents in D35.
 
+### D48. The window is always in front
+
+Decided on 2026-11-11. The window floats above the windows of other apps. Amends D23, which left this out of the first version.
+
+- **Why:** a monitor that gets covered by whatever is being worked on has to be dug out to be read. It also answers the cost accepted in D24, that a buried window could not be reached.
+- **Implication:** it is not a setting; the window is always in front. It can cover part of another app, so where it sits matters (D49), and it can be dragged elsewhere.
+
+### D49. The window starts in the bottom right corner
+
+Decided on 2026-11-11. On launch the window appears in the bottom right corner of the screen's usable area (clear of the Dock and the menu bar), 16 px from the edges.
+
+- **Unchanged:** the position is still not remembered between launches (D23). The window can be dragged anywhere, and returns to the corner at the next launch.
+- **Implication:** the window is created hidden and shown once its size is known, so it does not appear in one place and jump to another. When the window changes size later (a theme switch or a reload), it is moved only as far as needed to stay fully on the screen.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
@@ -562,7 +578,7 @@ Themes were built on 2026-11-11. Checked from captures of the app's own window:
 | `theme = "plain"` | Plain theme: solid dark panel, 260 px wide, roomier spacing. |
 | `theme = "does-not-exist"` | Falls back to frosted and shows "1 warning". |
 
-Switching themes while the app is running goes through the right-click menu and has to be checked by hand.
+Switching themes while the app is running goes through the right-click menu. It was checked by hand on 2026-11-11: the menu lists both themes with the current one ticked, and switching in either direction changes the material, colours, width and spacing without a restart, with all rows still fitting.
 
 Implementation choices made in phase 5 and not previously agreed:
 
@@ -578,6 +594,32 @@ Implementation choices made in phase 5 and not previously agreed:
 - **Theme warnings** are shown together with plugin warnings.
 
 The custom properties a theme's stylesheet sets are: `--surface`, `--surface-solid`, `--text`, `--text-muted`, `--spark-line`, `--spark-fill`, `--font`, `--value-weight`, `--pad`, `--row-gap`, `--spark-height`, `--spark-gap` and `--spark-width`.
+
+## Phase 6 results
+
+Window behaviour and the menu were built on 2026-11-11. Checked from captures of the app's own window and from what macOS reports about it:
+
+| Check | Result |
+|---|---|
+| Borderless | No title bar; rounded corners in both themes. |
+| Hidden from the Dock | macOS reports the app as a background-style app with no Dock icon. |
+| Always in front (D48) | The window is on the floating layer. |
+| Starting position (D49) | Bottom right corner, 16 px from the right and bottom edges, in both themes. |
+| Remembered theme (D40) | With `theme = "frosted"` in config and `theme = "plain"` in `state.toml`, the app starts in Plain. |
+| Nothing written unasked | Launching with an empty folder leaves it empty. |
+
+Dragging, the menu items (Reload Plugins, Open Config Folder, Quit Excalibur) and remembering a theme picked from the menu need a right-click and have to be checked by hand.
+
+Implementation choices made in phase 6 and not previously agreed:
+
+- **The whole window is the drag handle**, including the sparklines.
+- **The window cannot be resized by hand.** Its width comes from the theme and its height from its rows.
+- **If the page has not reported its size 3 s after launch, the window is shown anyway**, so a page that fails to load cannot leave an app with no Dock icon and no window.
+- **Reload Plugins re-reads `config.toml` and the plugin folders.** It does not change the theme.
+- **`state.toml` is created the first time a theme is picked from the menu**, along with `~/.config/excalibur` if it does not exist.
+- **The commented `config.toml`** written by Open Config Folder is kept in `src-tauri/config.template.toml`; a test checks that it matches the real defaults.
+
+A bug found and fixed: the page's surface was painted on `<body>`, which browsers spread over the whole window, so the corners outside the rounded shape were filled in. It is now painted on an inner panel.
 
 ## Open questions
 

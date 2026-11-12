@@ -37,7 +37,7 @@ Temperature and GPU have no official public API on Apple Silicon. The app tries 
 
 ### How it looks
 
-- A small floating window with no title bar and no Dock icon.
+- A small floating window with no title bar and no Dock icon. It stays in front of other windows and starts in the bottom right corner of the screen.
 - Frosted glass by default.
 - The look is defined by a theme, not hard-coded. Themes can be added later and switched quickly.
 - Right-clicking the window gives a menu to switch theme, reload plugins, open the config folder and quit.
@@ -63,7 +63,7 @@ Portability to other operating systems is a bonus, not a first-version requireme
 
 - Battery metrics and a top-processes list.
 - Fill bars, and plugins that report more than one value.
-- Always-on-top, and remembering window position and size.
+- Remembering window position and size.
 - A menu bar icon.
 - Code signing and notarisation.
 - History persisted to disk, or looking back over hours or days.

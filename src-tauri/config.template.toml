@@ -1,0 +1,27 @@
+# Excalibur settings. Every line is optional, and nothing here takes effect
+# until you remove the leading "# " from it. The values shown are the defaults.
+# After a change, choose "Reload Plugins" from the window's right-click menu.
+
+# Theme to start with, by its folder name. Once a theme has been picked from
+# the right-click menu, that choice is used instead.
+# theme = "frosted"
+
+# Seconds between refreshes, unless a plugin or [intervals] says otherwise.
+# interval = 2.0
+
+# Seconds before a plugin that is still running is stopped.
+# timeout = 5.0
+
+# Order of the rows. Plugins not listed follow in alphabetical order.
+# plugins = ["cpu", "memory", "temperature", "gpu", "net-down", "net-up", "storage"]
+
+# Plugins to hide.
+# disabled = []
+
+# Extra folders to search for the commands your plugins run.
+# path = []
+
+# Refresh intervals for individual plugins, in seconds. For example:
+# [intervals]
+# cpu = 1.0
+# storage = 30.0

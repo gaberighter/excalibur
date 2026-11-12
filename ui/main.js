@@ -10,6 +10,7 @@ const REDRAW_MS = 1000;
 
 const metricsEl = document.getElementById("metrics");
 const warningsEl = document.getElementById("warnings");
+const panelEl = document.getElementById("panel");
 
 /** name -> { plugin, points, reason, hover, els } */
 const rows = new Map();
@@ -129,6 +130,7 @@ async function refresh() {
   }
   engineWarnings = snapshot.warnings;
   showWarnings();
+  laidOut = true;
   await fitWindow();
 }
 
@@ -143,9 +145,14 @@ async function applyTheme(theme) {
   await fitWindow();
 }
 
+// Set once the theme and the rows are both in place. The first fit also
+// decides where the window appears, so it must not run on a half-built page.
+let laidOut = false;
+
 /** Asks for a window exactly tall enough for the rows, so none are cut off. */
 async function fitWindow() {
-  const style = getComputedStyle(document.body);
+  if (!laidOut) return;
+  const style = getComputedStyle(panelEl);
   const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
   let content = metricsEl.scrollHeight + padding;
   if (!warningsEl.hidden) {
@@ -172,6 +179,10 @@ async function start() {
   window.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     invoke("show_menu");
+  });
+  // There is no title bar, so the whole window is the handle for moving it.
+  window.addEventListener("mousedown", (event) => {
+    if (event.button === 0) window.__TAURI__.window.getCurrentWindow().startDragging();
   });
   // The window's width changes with the theme, which can re-wrap the rows.
   window.addEventListener("resize", () => fitWindow());

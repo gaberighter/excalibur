@@ -15,9 +15,13 @@
         "title": "Excalibur",
         "width": 220,
         "height": 380,
-        "resizable": true,
+        "resizable": false,
         "fullscreen": false,
-        "transparent": true
+        "transparent": true,
+        "decorations": false,
+        "shadow": true,
+        "alwaysOnTop": true,
+        "visible": false
       }
     ],
     "security": {

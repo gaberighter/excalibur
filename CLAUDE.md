@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0–5 of `implementation_plan.md` are built (results for each phase are in `decisions.md`). `stats-probe` reports all seven built-in metrics, the plugin engine runs them, the window shows one row per plugin with live values and sparklines, and themes are loaded from theme folders and can be switched from a right-click menu. Not done yet: the borderless, Dock-less window, the rest of the menu (reload, open config folder, quit), remembering the chosen theme (phase 6), packaging (phase 7) and user documentation (phase 8).
+Phases 0–6 of `implementation_plan.md` are built (results for each phase are in `decisions.md`). `stats-probe` reports all seven built-in metrics, the plugin engine runs them, and the window shows one row per plugin with live values and sparklines. The window is borderless, hidden from the Dock, always in front, and starts in the bottom right corner. A right-click menu switches themes, reloads plugins, opens the config folder and quits. Not done yet: packaging (phase 7), where the app must find its plugins, themes and helper inside the bundle instead of the source tree, and user documentation (phase 8).
 
 ## Commands
 
@@ -30,6 +30,8 @@ App to window: `src-tauri/src/lib.rs` starts the engine and emits each `Event` t
 
 Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in themes are in `src-tauri/themes/`. `lib.rs` applies the window part of a theme (material, radius, width) and sends the stylesheet to the page, which puts it in `<style id="theme">`. There is no stylesheet for colours in `ui/`; without a theme the page has no look.
 
+Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
+
 Checking the window by eye, without asking the user: launch with `cargo tauri dev`, find the window id of the process named `excalibur` through `CGWindowListCopyWindowInfo` (a few lines of Swift), and capture only that window with `screencapture -l <id>`. Capture the app's window only, never the whole screen. Right-clicks cannot be sent from a terminal, so anything behind the menu needs the user. Layout alone can also be checked by rendering `ui/` in a headless Chromium-based browser with `window.__TAURI__` stubbed.
 
 The project, Excalibur, is a small floating desktop window for macOS (Apple Silicon first) that shows system metrics: CPU, memory, storage, temperature, network and GPU. Its working name was `stats_gui`, which is still the name of the local folder (D42).
@@ -37,7 +39,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D47) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D49) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -74,13 +76,13 @@ Command lookup (D38): a bare `command` name in a manifest is resolved in the plu
 - **No persistence of readings.** History is in memory only and is lost on quit by design.
 - **Do not special-case built-in metrics.** If a built-in needs something the plugin interface cannot express, extend the interface.
 - **Keep OS-specific code out of the app, frontend, plugin interface and themes.**
-- **First version exclusions:** fill bars, multi-value plugins (network is two plugins, `net-down` and `net-up`), always-on-top, remembered window position, a menu bar icon, code signing.
+- **First version exclusions:** fill bars, multi-value plugins (network is two plugins, `net-down` and `net-up`), remembered window position, a menu bar icon, code signing.
 
 ## Phase 1 findings worth knowing
 
 - Temperature, GPU usage and raw CPU time are all readable without sudo on the M2: `sysinfo` components for temperature, the GPU's IORegistry entry ("Device Utilization %") for GPU, and the host statistics call in `libc` for CPU. The GPU reader has only been tried through the `ioreg` command, not from Rust.
 - Launching one process per built-in metric each second cost about 5.5 % of a core, which is why built-ins are batched (D43). Each drop-in plugin still costs a process per refresh.
-- The local branch `spike/phase1-window` holds a working prototype of the borderless frosted window, runtime theme switching and the right-click menu. It is throwaway code, but a useful reference for phases 5 and 6.
+- The local branch `spike/phase1-window` holds the throwaway prototype of the borderless frosted window. Phases 5 and 6 have replaced it; it can be deleted.
 
 ## Distribution
 

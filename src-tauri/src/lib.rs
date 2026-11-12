@@ -1,16 +1,22 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 pub mod engine;
+pub mod placement;
+pub mod scaffold;
+pub mod state;
 pub mod theme;
 
 use engine::config::{self, Config};
 use engine::{Engine, Event, Paths};
+use placement::Area;
 use serde::Serialize;
+use state::State;
 use tauri::menu::{CheckMenuItemBuilder, ContextMenu, MenuBuilder};
 use tauri::window::{EffectState, EffectsBuilder};
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use theme::Theme;
 
 const HELPER_NAME: &str = "stats-probe";
@@ -98,6 +104,9 @@ const ENGINE_EVENT: &str = "engine";
 const THEME_EVENT: &str = "theme";
 /// Menu item ids for themes are this prefix followed by the theme's id.
 const THEME_ITEM_PREFIX: &str = "theme:";
+const RELOAD_ITEM: &str = "reload";
+const OPEN_CONFIG_ITEM: &str = "open-config";
+const QUIT_ITEM: &str = "quit";
 
 /// The plugins and their recent history, for a window that has just loaded.
 #[tauri::command]
@@ -108,32 +117,98 @@ fn snapshot(engine: tauri::State<Engine>) -> engine::Snapshot {
 const MIN_WINDOW_HEIGHT: f64 = 60.0;
 const MAX_WINDOW_HEIGHT: f64 = 2000.0;
 
+/// Gap between the window and the screen's edges where it first appears.
+const CORNER_MARGIN: f64 = 16.0;
+/// The window is shown this long after launch even if the page has not
+/// reported its size, so a page that fails to load cannot leave an app with
+/// no Dock icon and no window.
+const SHOW_ANYWAY_AFTER: Duration = Duration::from_secs(3);
+
+/// Whether the window has been put in its starting corner and shown.
+#[derive(Default)]
+struct Placed(AtomicBool);
+
+enum Position {
+    /// The bottom right corner of the screen (D49).
+    Corner,
+    /// Where it is, moved only if part of it would be off the screen.
+    Current,
+}
+
+/// Resizes the window and makes sure all of it is still on the screen.
+fn resize(
+    window: &WebviewWindow,
+    width: f64,
+    height: f64,
+    position: Position,
+) -> tauri::Result<()> {
+    window.set_size(tauri::LogicalSize::new(width, height))?;
+    let monitor = match window.current_monitor()? {
+        Some(monitor) => monitor,
+        None => match window.primary_monitor()? {
+            Some(monitor) => monitor,
+            None => return Ok(()),
+        },
+    };
+    let scale = monitor.scale_factor();
+    let work = monitor.work_area();
+    let area = Area {
+        x: work.position.x as f64,
+        y: work.position.y as f64,
+        width: work.size.width as f64,
+        height: work.size.height as f64,
+    };
+    // The size just asked for; the window may not report it yet.
+    let size = (width * scale, height * scale);
+    let (x, y) = match position {
+        Position::Corner => placement::bottom_right(area, size, CORNER_MARGIN * scale),
+        Position::Current => {
+            let current = window.outer_position()?;
+            placement::keep_inside(area, (current.x as f64, current.y as f64), size)
+        }
+    };
+    window.set_position(tauri::PhysicalPosition::new(
+        x.round() as i32,
+        y.round() as i32,
+    ))
+}
+
 /// Makes the window tall enough for its content, so every row is visible
 /// however many plugins there are. The width is left alone.
 ///
-/// `content` is the height the page needs and `viewport` the height it has.
-/// The window grows or shrinks by the difference, because with a title bar
-/// the window's own size is not the size of the page.
+/// `content` is the height the page needs and `viewport` the height it has;
+/// the window grows or shrinks by the difference. The first call also puts
+/// the window in its starting corner and shows it, now that its size is known.
 #[tauri::command]
-fn fit_height(window: tauri::Window, content: f64, viewport: f64) -> Result<(), String> {
+fn fit_height(
+    window: WebviewWindow,
+    placed: tauri::State<Placed>,
+    content: f64,
+    viewport: f64,
+) -> Result<(), String> {
     let scale = window.scale_factor().map_err(|e| e.to_string())?;
     let current = window
         .inner_size()
         .map_err(|e| e.to_string())?
         .to_logical::<f64>(scale);
     let height = (current.height + content - viewport).clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
+    let first = !placed.0.swap(true, Ordering::SeqCst);
+    if first {
+        resize(&window, current.width, height, Position::Corner).map_err(|e| e.to_string())?;
+        return window.show().map_err(|e| e.to_string());
+    }
     if (height - current.height).abs() < 1.0 {
         return Ok(());
     }
-    window
-        .set_size(tauri::LogicalSize::new(current.width, height))
-        .map_err(|e| e.to_string())
+    resize(&window, current.width, height, Position::Current).map_err(|e| e.to_string())
 }
 
 /// The theme in use, and where themes are found.
 struct ThemeState {
     bundled: PathBuf,
     user: PathBuf,
+    /// Where the theme picked from the menu is remembered (D40).
+    state_file: PathBuf,
     current: Mutex<Active>,
 }
 
@@ -207,13 +282,19 @@ fn apply_to_window(app: &AppHandle, theme: &Theme) -> tauri::Result<()> {
     window.set_effects(effects)?;
     let scale = window.scale_factor()?;
     let current = window.inner_size()?.to_logical::<f64>(scale);
-    window.set_size(tauri::LogicalSize::new(theme.width, current.height))
+    resize(&window, theme.width, current.height, Position::Current)
 }
 
-/// Changes the theme while the app is running.
+/// Changes the theme while the app is running, and remembers the choice.
 fn switch_theme(app: &AppHandle, id: &str) {
     let state = app.state::<ThemeState>();
     let active = state.load(id);
+    let remembered = State {
+        theme: Some(active.theme.id.clone()),
+    };
+    if let Err(e) = remembered.save(&state.state_file) {
+        log::warn!("could not remember the chosen theme: {e}");
+    }
     if let Err(e) = apply_to_window(app, &active.theme) {
         log::warn!(
             "could not apply theme '{}' to the window: {e}",
@@ -241,9 +322,51 @@ fn show_menu(window: tauri::Window, state: tauri::State<ThemeState>) -> Result<(
                 .map_err(|e| e.to_string())?;
         menu = menu.item(&item);
     }
-    let menu = menu.build().map_err(|e| e.to_string())?;
+    let menu = menu
+        .separator()
+        .text(RELOAD_ITEM, "Reload Plugins")
+        .text(OPEN_CONFIG_ITEM, "Open Config Folder")
+        .separator()
+        .text(QUIT_ITEM, "Quit Excalibur")
+        .build()
+        .map_err(|e| e.to_string())?;
     menu.popup(window).map_err(|e| e.to_string())
 }
+
+/// Opens the user's folder in the file manager, creating it first if it is
+/// not there (D41).
+fn open_config_folder(dir: &Path) {
+    if let Err(e) = scaffold::ensure_user_dir(dir) {
+        log::warn!("could not set up {}: {e}", dir.display());
+        return;
+    }
+    let opener = if cfg!(target_os = "macos") {
+        "open"
+    } else if cfg!(target_os = "windows") {
+        "explorer"
+    } else {
+        "xdg-open"
+    };
+    if let Err(e) = std::process::Command::new(opener).arg(dir).spawn() {
+        log::warn!("could not open {}: {e}", dir.display());
+    }
+}
+
+fn on_menu_item(app: &AppHandle, id: &str) {
+    match id {
+        RELOAD_ITEM => app.state::<Engine>().reload(),
+        OPEN_CONFIG_ITEM => open_config_folder(&app.state::<UserDir>().0),
+        QUIT_ITEM => app.exit(0),
+        _ => {
+            if let Some(theme) = id.strip_prefix(THEME_ITEM_PREFIX) {
+                switch_theme(app, theme);
+            }
+        }
+    }
+}
+
+/// `~/.config/excalibur`, or its override.
+struct UserDir(PathBuf);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -259,21 +382,44 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let paths = dev_paths();
+            // No Dock icon and no entry in the app switcher (D23).
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let (config, _) = Config::load(&paths.engine.user_dir.join(config::FILE_NAME));
+            let paths = dev_paths();
+            let user_dir = paths.engine.user_dir.clone();
+            app.manage(UserDir(user_dir.clone()));
+            app.manage(Placed::default());
+
+            // The theme picked from the menu wins over the one in config (D40).
+            let (config, _) = Config::load(&user_dir.join(config::FILE_NAME));
+            let state_file = user_dir.join(state::FILE_NAME);
+            let wanted = State::load(&state_file).theme.unwrap_or(config.theme);
             let themes = ThemeState {
                 user: paths.user_themes(),
                 bundled: paths.bundled_themes,
+                state_file,
                 current: Mutex::new(Active {
                     theme: Theme::embedded_default(),
                     warnings: Vec::new(),
                 }),
             };
-            let active = themes.load(&config.theme);
+            let active = themes.load(&wanted);
             apply_to_window(app.handle(), &active.theme)?;
             *themes.current.lock().unwrap() = active;
             app.manage(themes);
+
+            // The window starts hidden and is shown by the page's first
+            // `fit_height`, once its size and corner are known.
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(SHOW_ANYWAY_AFTER);
+                if !handle.state::<Placed>().0.swap(true, Ordering::SeqCst)
+                    && let Some(window) = handle.get_webview_window(MAIN_WINDOW)
+                {
+                    let _ = window.show();
+                }
+            });
 
             let handle = app.handle().clone();
             let engine = Engine::start(paths.engine, move |event| {
@@ -284,11 +430,7 @@ pub fn run() {
             app.manage(engine);
             Ok(())
         })
-        .on_menu_event(|app, event| {
-            if let Some(id) = event.id().as_ref().strip_prefix(THEME_ITEM_PREFIX) {
-                switch_theme(app, id);
-            }
-        })
+        .on_menu_event(|app, event| on_menu_item(app, event.id().as_ref()))
         .run(tauri::generate_context!())
         .expect("error while building tauri application");
 }

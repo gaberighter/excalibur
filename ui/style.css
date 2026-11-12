@@ -7,14 +7,20 @@ body {
   height: 100%;
 }
 
-/* The window itself is transparent; the theme decides what shows behind
-   the page, through `--surface` and the window material in theme.toml. */
-html {
+/* The window itself is transparent. The page's surface is painted by the
+   panel, not by <body>: a background on <body> would spread to the whole
+   window and fill in the rounded corners. */
+html,
+body {
   background: transparent;
+  overflow: hidden;
 }
 
-body {
+/* What shows behind the rows is the theme's `--surface`, over the window
+   material chosen in theme.toml. */
+#panel {
   box-sizing: border-box;
+  height: 100%;
   /* Set from the radius in theme.toml, so the page and the window agree. */
   border-radius: var(--window-radius, 0);
   display: flex;

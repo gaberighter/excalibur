@@ -130,7 +130,7 @@ Tests, using small shell scripts as fake plugins:
 
 ## Phase 6: Window behaviour and menu
 
-- Borderless window with a drag region covering the body (D23).
+- Borderless window with a drag region covering the body (D23), always in front (D48), starting in the bottom right corner of the screen (D49).
 - Hidden from the Dock and the app switcher (D23).
 - Right-click menu: switch theme (listing discovered themes), reload plugins, open config folder, quit (D24).
 - "Open config folder" creates `~/.config/excalibur/` if it does not exist, with empty `plugins/` and `themes/` folders and a `config.toml` in which every setting is commented out and shows its default. An existing `config.toml` is never overwritten (D41).
@@ -167,4 +167,4 @@ Tests, using small shell scripts as fake plugins:
 
 ## Deliberately left out
 
-Everything in the "Out of scope for the first version" list in [project_scope.md](project_scope.md), in particular: battery and top-process plugins, fill bars, multi-value plugins, persisted history, always-on-top, remembered window position, a menu bar icon, code signing, and Linux or Windows support.
+Everything in the "Out of scope for the first version" list in [project_scope.md](project_scope.md), in particular: battery and top-process plugins, fill bars, multi-value plugins, persisted history, remembered window position, a menu bar icon, code signing, and Linux or Windows support.
