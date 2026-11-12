@@ -795,6 +795,25 @@ Choices made in the cask and not previously agreed:
 - **`brew uninstall --zap` removes `~/.config/excalibur`**; a plain uninstall leaves it.
 - **The quarantine flag is cleared with a `postflight_steps` block**, the form current Homebrew asks for.
 
+## Phase 8 results: documentation
+
+Written on 2026-11-12: a README for users, and three guides in `docs/` (configuration, writing a plugin, writing a theme). `stack.md` was rewritten to describe the stack as built; it no longer has anything marked proposed or to verify.
+
+The plan's check for this phase was that a plugin and a theme can each be written from the guides alone. The guides' examples were created exactly as written, in a scratch config folder, and run:
+
+| Example | Result |
+|---|---|
+| Battery plugin (a gauge) | Loads and reports the charge. |
+| Packets plugin (a counter) | Shows a dash for its first reading, then a rate. |
+| A user plugin replacing the built-in `cpu` through `batch` | Replaces it, with its own label and interval. |
+| Midnight theme | Appears and draws as described, with the example plugins. |
+| `config.toml` settings (`disabled`, `path`, `[intervals]`) | Behave as documented. |
+
+One thing the guides promised turned out not to be true, and was fixed in the app:
+
+- **Explanations are drawn inside the window.** The reason for a missing value, and the text of warnings, were system tooltips, which do not appear on a window that is not the active one. They are now a small note drawn inside the window, at the end away from the pointer. Checked by rendering the page with the note forced on; not checked with a real pointer.
+- **This is not in version 0.1.0**, which was published before it. Until a later release, the installed app shows a dash or a warning count with no explanation.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.

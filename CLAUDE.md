@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0–7 of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added along the way (results for each are in `decisions.md`). Version 0.1.0 is published and installable with `brew install --cask gaberighter/tap/excalibur`. Not done: phase 8 (user documentation: plugin and theme guides), automatic release builds, and testing on a second Mac.
+All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent colour added along the way (results for each are in `decisions.md`). Version 0.1.0 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. Not done: automatic release builds, and testing on a second Mac. `main` is ahead of 0.1.0: the in-window explanation notes are not released yet.
 
 ## Commands
 
@@ -33,7 +33,7 @@ Themes: `src-tauri/src/theme.rs` parses and discovers theme folders; built-in th
 
 Finding its own files: `app_paths` in `lib.rs`. The packaged app has its plugins, themes and the `stats-probe` helper as resources (`Contents/Resources`), added by `src-tauri/tauri.bundle.conf.json`, which only the release script applies. A debug build with no resources falls back to the source tree; a release build never does.
 
-Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
+Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. System tooltips (`title`) do not appear on this window, because it is rarely the active one; explanations go in a `data-tip` attribute, which `main.js` shows in `#tip`, a note drawn inside the window. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
 
 Checking the window by eye, without asking the user: launch with `cargo tauri dev`, find the window id of the process named `excalibur` through `CGWindowListCopyWindowInfo` (a few lines of Swift), and capture only that window with `screencapture -l <id>`. Capture the app's window only, never the whole screen. Right-clicks cannot be sent from a terminal, so anything behind the menu needs the user. Layout alone can also be checked by rendering `ui/` in a headless Chromium-based browser with `window.__TAURI__` stubbed.
 
@@ -43,10 +43,10 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
 - `decisions.md`: numbered decisions (D1–D59) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
-- `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
+- `stack.md`: the stack, as built.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
-When a design choice is made or changed, record it in `decisions.md`: append a new D-number, never renumber, and mark a reversed decision as superseded instead of deleting it. Keep `stack.md` and `project_scope.md` consistent with it. Items marked "proposed" or "to verify" in `stack.md` have not been agreed or tested; do not treat them as settled.
+When a design choice is made or changed, record it in `decisions.md`: append a new D-number, never renumber, and mark a reversed decision as superseded instead of deleting it. Keep `stack.md` and `project_scope.md` consistent with it.
 
 ## Planned architecture
 

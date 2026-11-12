@@ -13,6 +13,7 @@ const metricsEl = document.getElementById("metrics");
 const warningsEl = document.getElementById("warnings");
 const panelEl = document.getElementById("panel");
 const themeEl = document.getElementById("theme");
+const tipEl = document.getElementById("tip");
 
 /**
  * name -> { plugin, points, reason, min, max, els }
@@ -140,7 +141,7 @@ const RowsView = {
     const unavailable = shown === null;
     els.value.textContent = unavailable ? NO_VALUE : shown.toFixed(plugin.decimals);
     els.root.classList.toggle("unavailable", unavailable);
-    els.root.title = unavailable && metric.reason ? metric.reason : "";
+    els.root.dataset.tip = unavailable && metric.reason ? `${plugin.label}: ${metric.reason}` : "";
   },
 
   /** Sparklines slide with time, so they are redrawn between samples. */
@@ -151,7 +152,7 @@ const RowsView = {
   showWarnings(warnings) {
     warningsEl.hidden = warnings.length === 0;
     warningsEl.textContent = warningCount(warnings);
-    warningsEl.title = warnings.join("\n");
+    warningsEl.dataset.tip = warnings.join("\n\n");
   },
 
   height() {
@@ -187,7 +188,6 @@ const ArcsView = {
     for (const metric of metrics.values()) {
       const radius = radii[index];
       const group = svgEl("g", "arc", svg);
-      const title = svgEl("title", "", group);
       // An invisible ring, easier to point at than the arc itself.
       const hit = svgEl("circle", "arc-hit", group);
       hit.setAttribute("cx", centre);
@@ -224,7 +224,7 @@ const ArcsView = {
       svgEl("tspan", "arc-label", onPath).textContent = `${metric.plugin.short} `;
       const value = svgEl("tspan", "arc-value", onPath);
 
-      metric.els = { radius, fill, value, title, group };
+      metric.els = { radius, fill, value, group };
       index += 1;
     }
 
@@ -241,7 +241,6 @@ const ArcsView = {
     this.readoutLabel = centreText("arc-readout-label", fontSize, centre - fontSize * 0.5);
     this.readoutValue = centreText("arc-readout-value", fontSize * 1.5, centre + fontSize * 1.1);
     this.warningEl = centreText("arc-warning", fontSize, centre + fontSize * 0.36);
-    this.warningTitle = svgEl("title", "", this.warningEl);
     this.warningText = svgEl("tspan", "", this.warningEl);
   },
 
@@ -268,10 +267,7 @@ const ArcsView = {
     els.fill.setAttribute("stroke-dasharray", Arcs.dashes(els.radius, filled).fill);
     els.fill.style.display = value === null ? "none" : "";
     els.value.textContent = withUnit(plugin, value);
-    els.title.textContent =
-      value === null && metric.reason
-        ? `${plugin.label}: ${metric.reason}`
-        : `${plugin.label}: ${withUnit(plugin, value)}`;
+    els.group.dataset.tip = value === null && metric.reason ? `${plugin.label}: ${metric.reason}` : "";
   },
 
   /** Arcs measured against a recent peak change as old points leave the window. */
@@ -288,7 +284,7 @@ const ArcsView = {
     warningsEl.hidden = true;
     if (!this.warningEl) return;
     this.warningText.textContent = warnings.length ? `${warnings.length} !` : "";
-    this.warningTitle.textContent = warnings.join("\n");
+    this.warningEl.dataset.tip = warnings.join("\n\n");
   },
 
   /** The window is square. */
@@ -296,6 +292,26 @@ const ArcsView = {
     return theme.width;
   },
 };
+
+/**
+ * The explanation attached to whatever the pointer is over, if any. The
+ * system's own tooltips are not used: they do not appear on a window that
+ * is not the active one, which is how this window spends its time.
+ */
+function tipFor(target) {
+  for (let node = target; node && node.dataset; node = node.parentNode) {
+    if (node.dataset.tip) return node.dataset.tip;
+  }
+  return "";
+}
+
+/** Shows the explanation in the half of the window the pointer is not in. */
+function showTip(text, pointerY) {
+  tipEl.hidden = !text;
+  if (!text) return;
+  tipEl.textContent = text;
+  tipEl.classList.toggle("at-top", pointerY > window.innerHeight / 2);
+}
 
 function view() {
   return theme && theme.layout === "arcs" ? ArcsView : RowsView;
@@ -388,6 +404,8 @@ async function start() {
   window.addEventListener("mousedown", (event) => {
     if (event.button === 0) window.__TAURI__.window.getCurrentWindow().startDragging();
   });
+  window.addEventListener("mousemove", (event) => showTip(tipFor(event.target), event.clientY));
+  document.documentElement.addEventListener("mouseleave", () => showTip(""));
   // The window's width changes with the theme, which can re-wrap the rows.
   window.addEventListener("resize", () => fitWindow());
 

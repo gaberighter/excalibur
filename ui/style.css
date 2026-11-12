@@ -242,3 +242,49 @@ body {
 :root[data-layout="compact"] .metric-age {
   display: none;
 }
+
+/* A note about whatever the pointer is over, drawn inside the window because
+   nothing can be drawn outside it. It sits at the bottom, or at the top when
+   the pointer is in the lower half, so it does not cover what it describes. */
+#tip {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 10;
+  box-sizing: border-box;
+  max-height: calc(100% - 16px);
+  padding: 6px 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface-solid);
+  color: var(--text);
+  font: var(--font);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
+#tip.at-top {
+  top: 8px;
+  bottom: auto;
+}
+
+#tip[hidden] {
+  display: none;
+}
+
+/* On the round window, keep clear of the curve. */
+:root[data-layout="arcs"] #tip {
+  left: 16%;
+  right: 16%;
+  bottom: 14%;
+  text-align: center;
+}
+
+:root[data-layout="arcs"] #tip.at-top {
+  top: 14%;
+  bottom: auto;
+}

@@ -1,5 +1,7 @@
 # Implementation Plan
 
+> **Status, 2026-11-12:** all nine phases are done and version 0.1.0 is published. What each phase found, and what was added or changed along the way (the batched helper, the compact and round layouts, the accent colour), is recorded in [decisions.md](decisions.md). Three things in this plan were not done: an install on a second Mac, a `brew upgrade` to a later release, and automatic release builds. The rest of this document is the plan as it was written.
+
 How the first version gets built. Decision numbers (D…) and open questions (O…) refer to [decisions.md](decisions.md); stack details are in [stack.md](stack.md).
 
 ## Approach

@@ -1,107 +1,99 @@
 # Stack
 
-What the project is built with. The reasoning behind each choice is in [decisions.md](decisions.md); decision numbers are given in brackets.
-
-Items marked **confirmed** were decided during scoping. Items marked **proposed** are the expected choice but have not been agreed or tested yet.
+What the project is built with, as built. The reasoning behind each choice is in [decisions.md](decisions.md); decision numbers are given in brackets.
 
 ## Overview
 
-| Layer | Choice | Status |
+| Layer | Choice | Decision |
 |---|---|---|
-| Language (backend) | Rust | Confirmed (D3) |
-| App framework | Tauri v2 | Confirmed (D3); v2 is assumed because it has built-in window effects |
-| Frontend | Plain HTML/CSS/JS, no framework, no bundler | Confirmed (D4) |
-| Sparklines | Hand-drawn with inline SVG or `<canvas>`, no charting library | Proposed |
-| System metrics | `sysinfo` crate | Proposed |
-| Temperature and GPU | Best effort; both readable without sudo on the M2 | Confirmed in phase 1 (D44) |
-| Built-in metrics | One Rust helper binary; one run per refresh cycle returns all built-ins that are due | Confirmed (D22, D43) |
-| Plugin data format | JSON on standard output, parsed with `serde` and `serde_json` | Confirmed (D15); crates proposed |
-| Config | `~/.config/excalibur/config.toml` | Confirmed (D20) |
-| Distribution | Homebrew tap, builds on GitHub Releases | Confirmed (D13) |
-| Target platform | macOS on Apple Silicon | Confirmed (D2) |
+| Language | Rust | D3 |
+| App framework | Tauri v2 | D3 |
+| Page | Plain HTML, CSS and JavaScript; no framework, no bundler, no build step | D4 |
+| Sparklines and arcs | Hand-drawn inline SVG; no charting library | D7, D51 |
+| Built-in metrics | One helper binary, `stats-probe`; one run per refresh cycle returns every built-in that is due | D22, D43, D45 |
+| Plugin data format | JSON on standard output | D15, D27, D52 |
+| Settings and manifests | TOML | D20, D26, D30 |
+| Distribution | A zip of the app on GitHub Releases, installed by a Homebrew cask from a personal tap | D13, D25 |
+| Target platform | macOS 13 or later on Apple Silicon | D2 |
 
-## Backend: Rust
+## Rust crates
 
-Responsible for:
+| Crate | Used for |
+|---|---|
+| `tauri` (with `macos-private-api`) | The window, the right-click menu, window effects, and events to the page. |
+| `serde`, `serde_json`, `toml` | Reading plugin output, manifests, themes, config and state. |
+| `sysinfo` (in `stats-probe`) | Temperature sensors, GPU utilisation and network totals. |
+| `libc` | In `stats-probe`: CPU time, memory and disk statistics. In the app: stopping a timed-out plugin and everything it started. |
+| `core-foundation` | Reading the macOS accent colour setting. |
+| `tauri-plugin-log`, `log` | Log output in debug builds. |
+| `tempfile` (tests only) | Scratch folders for engine tests. |
 
-- Finding plugins in the app bundle and in `~/.config/excalibur/plugins`, with the user folder taking precedence (D21).
-- Running each plugin's executable at its refresh rate and parsing the JSON it prints (D15, D18).
-- Turning counter values into rates (D16).
-- Treating slow, failing or invalid plugins as unavailable (D6).
-- Providing the right-click menu (D24).
-- Holding recent history in memory for sparklines (D7).
-- Sending samples to the frontend through Tauri events or commands.
-- Loading themes and applying their window settings (D11).
+## The two binaries
 
-The project builds two Rust binaries: the Tauri app, and the helper that provides the built-in metrics (D22). All OS-specific metric code lives in the helper, so that adding another OS later means extending the helper and nothing else (D2).
+- **The app** (`src-tauri/`). Finds plugins and themes, runs plugins on a schedule, turns counters into rates, keeps 60 seconds of history in memory, and sends samples to the page. It collects no metrics itself.
+- **`stats-probe`** (`stats-probe/`). Reports any of the seven built-in metrics as one JSON object keyed by name. All metric code that is specific to an operating system is here, so supporting another system means extending this binary (D2).
 
-## App framework: Tauri
+The app has one piece of system-specific code of its own: reading the macOS accent colour (D58).
 
-Window settings the project depends on:
+## Tauri settings the app depends on
 
 | Setting | Purpose |
 |---|---|
-| `transparent: true` | Lets the theme decide how see-through the window is. |
-| `macOSPrivateApi: true` | Required for transparent windows on macOS. Makes the app ineligible for the Mac App Store, which is not a goal (D13). |
-| `windowEffects` | Native macOS blur for the frosted glass theme (D11). |
-| `decorations: false` | Borderless window (D23). The page must mark a drag region so the window can be moved. |
-| Hidden from the Dock | Set through the macOS activation policy (D23). |
-
-Confirmed in the phase 1 prototype: window effects and width can be changed while the app is running, and a right-click menu works on a borderless, Dock-less window (D24). The prototype is on the local branch `spike/phase1-window`.
-
-## Frontend: plain HTML/CSS/JS
-
-- No framework and no build step; Tauri serves the static files directly.
-- The base stylesheet contains layout only. Colours, blur, fonts and spacing come from the active theme, most likely as CSS custom properties (D11).
-- The frontend draws each metric according to what its plugin declares (D10) and must handle a metric being unavailable (D6).
+| `transparent: true` | Lets the theme decide what shows behind the page, and lets the window be round. |
+| `macOSPrivateApi: true` | Required for transparent windows on macOS. Rules out the Mac App Store, which is not a goal (D13). |
+| `decorations: false` | No title bar (D23). The page starts a window drag on mouse-down. |
+| `alwaysOnTop: true` | The window floats above others (D48). |
+| `visible: false` | The window is shown once its size and corner are known (D49). |
+| Window effects, set at run time | The native material behind a theme (D11, D30). |
+| Accessory activation policy, and `LSUIElement` in `Info.plist` | No Dock icon (D23). |
+| `withGlobalTauri: true` | Lets the page call the app without a bundler. |
 
 ## Metric sources
 
-| Metric | Expected source | Status |
-|---|---|---|
-| CPU usage | macOS host statistics call via the `libc` crate, printed as percent-seconds (D33) | Confirmed in phase 1 |
-| Memory usage | `sysinfo` | Proposed |
-| Storage | `sysinfo` | Proposed |
-| Network throughput | `sysinfo` | Proposed |
-| Temperature | `sysinfo` components; average of the die sensors (D44) | Confirmed in phase 1 |
-| GPU usage | "Device Utilization %" from the GPU's IORegistry entry, read without sudo | Confirmed in phase 1 with `ioreg`; Rust reader still to write |
+All read without administrator rights (D6).
 
-Temperature and GPU were confirmed readable without sudo on the MacBook Air M2 in phase 1. On other Mac models they may not be, in which case they show as unavailable (D6).
+| Metric | Source |
+|---|---|
+| CPU | The macOS host statistics call, reported as cumulative percent-seconds (D33). |
+| Memory | The macOS host VM statistics: app memory, wired and compressed; reported with the memory installed as its maximum (D37, D52). |
+| Storage | `statvfs` on the startup volume: free space, reported with the disk's size as its maximum (D37, D52). |
+| Temperature | `sysinfo` components; the average of the die sensors (D44). |
+| GPU | `sysinfo`, which reads "Device Utilization %" from the GPU's IORegistry entry. |
+| Network | `sysinfo` network totals, summed over Wi-Fi and Ethernet interfaces. |
 
-## Plugins and themes
+Temperature and GPU were confirmed on a MacBook Air M2 only. On another Mac they may not be readable, in which case they show as unavailable.
 
-- A plugin is a manifest plus an executable. The app runs the executable once per refresh and reads one JSON object from its output (D14, D15). Any language works, including shell scripts.
-- A plugin reports one number and chooses value only or value with sparkline (D17). Network is two plugins, upload and download.
-- Built-in plugins are manifests pointing at the helper binary (D22) and ship inside the app bundle (D21).
-- A theme is a folder with a stylesheet and a settings file for window-level effects (D19). The default frosted glass theme ships inside the app bundle.
-- User plugins and themes live in `~/.config/excalibur/plugins` and `~/.config/excalibur/themes` (D20).
-
-File formats, all defined in decisions.md:
+## Files
 
 | File | Purpose | Decision |
 |---|---|---|
-| `plugin.toml` | Plugin manifest: name, label, unit, `command` or `batch`, display, kind, interval, decimals, min, max | D26, D34, D45, D46 |
-| Plugin output | `{"value": 42.1}` or `{"value": null, "reason": "…"}` | D27 |
-| `theme.toml` | Window effect, corner radius, default width | D30 |
-| `theme.css` | Colours, fonts and spacing | D19 |
-| `config.toml` | Theme, global interval, timeout, plugin order, disabled plugins, per-plugin intervals. Optional; the app runs on defaults without it | D35 |
+| `plugin.toml` | A plugin's manifest | D26, D34, D45, D46, D53, D55 |
+| Plugin output | `{"value": 42.1}`, optionally with `min` and `max`; or `{"value": null, "reason": "…"}` | D27, D52 |
+| `theme.toml` | A theme's window settings: effect, radius, width, layout | D30, D50 |
+| `theme.css` | A theme's colours, fonts and spacing, as CSS custom properties | D19 |
+| `config.toml` | The user's settings; optional, and never written by the app | D35, D47, D57 |
+| `state.toml` | Written by the app: the theme and accent picked from the menu | D40, D57 |
 
-| `state.toml` | Written by the app; holds the theme chosen from the menu. The app never writes `config.toml` | D40 |
+User files are in `~/.config/excalibur/` (D20). Built-in plugins and themes are inside the app, in `Contents/Resources` (D21). These formats are described for users in [docs/](docs/).
 
-The app does no unit scaling; plugins print values in the unit they want shown (D31). Plugins that overrun are skipped for that tick and killed after a timeout, 5 s by default (D28). Sparklines cover a fixed 60 s window (D29).
+## Costs measured on the MacBook Air M2
 
-Measured in phase 1: launching seven processes per second cost about 5.5 % of one core on the M2. Built-ins are therefore collected in one `stats-probe` run per cycle (D43). Each drop-in plugin still costs one process per refresh, so many fast drop-ins will add up.
+- Launching any process costs about 3 ms of CPU time, and `stats-probe` about 8 ms, rising to about 20 ms when it reads all seven metrics; temperature alone is about 9 ms.
+- Launching one process per built-in metric each second cost about 5.5 % of one core, which is why the built-ins share one run (D43).
+- The engine and its helper runs together, at the built-in intervals, use about 1.7 % of one core.
+- Every drop-in plugin costs one process per refresh.
 
 ## Distribution
 
-- Source in a GitHub repository.
-- Release builds of the `.app` attached to GitHub Releases.
-- A separate tap repository (`homebrew-<name>`) containing a cask that points at the release.
-- Builds are unsigned. The cask removes the quarantine flag after install so the app opens without a Gatekeeper warning (D25).
+- Source and releases: <https://github.com/gaberighter/excalibur>, public.
+- `scripts/build-release.sh` builds `Excalibur.app` with the helper, plugins and themes inside, signs it ad hoc and zips it.
+- The tap, <https://github.com/gaberighter/homebrew-tap>, holds a cask that downloads the zip from the release, installs the app and clears the quarantine flag (D25).
+- Builds are not signed with a Developer ID and not notarised (D25).
+- Releases are made by hand; the steps are in `CLAUDE.md`.
 
 ## Development prerequisites
 
 - Rust toolchain (`rustup`).
 - Xcode Command Line Tools.
-- Tauri CLI.
-- No Node.js needed unless a bundler or framework is added later.
+- Tauri CLI (`cargo install tauri-cli --version "^2" --locked`).
+- Node.js, only to run the page's geometry tests.
