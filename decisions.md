@@ -61,6 +61,8 @@ All entries below were decided on 2026-11-11.
 | D51 | Round window | A circular window of concentric arcs with curved labels, as the Frosted Round theme |
 | D52 | Scales | A plugin may report `min` and `max` with a reading; built-ins get fixed scales (extends D27) |
 | D53 | Short labels | Optional `short` in the manifest, for layouts with little room |
+| D54 | Sparkline scale | Sparklines always fit their own data (amends D46) |
+| D55 | Inverted fill | Optional `invert` in the manifest; the storage arc fills with used space |
 
 ## Details
 
@@ -538,6 +540,24 @@ Decided on 2026-11-11. An arc needs a full mark to fill against. A plugin's outp
 Decided on 2026-11-11. `plugin.toml` may set `short`, a shorter label used by layouts with little room. It defaults to `label`. The built-ins use CPU, Mem, Temp, GPU, Down, Up and Disk. Extends D26.
 
 - **Why:** the innermost ring of the arcs layout has about 43 px for its label and value together.
+
+### D54. Sparklines always fit their own data
+
+Decided on 2026-11-11. A sparkline's vertical scale is always the range of the values it is showing. A plugin's `min` and `max` no longer fix it. Amends D46, where both bounds gave the sparkline a fixed scale.
+
+- **Why:** once memory and temperature were given scales for the arcs (D52), their sparklines were drawn against 0–8 GB and 20–100 °C and became flat lines.
+- **Unchanged from D46:** values are still clamped to `min` and `max`, and arcs fill against them.
+- **Side effect:** this applies to every sparkline, so the CPU and GPU sparklines, which D46 pinned to 0–100, now stretch to fit as well. A CPU drifting between 1 % and 3 % looks as busy as one swinging between 20 % and 80 %; the number beside it tells them apart.
+
+### D55. Optional `invert` in the manifest
+
+Decided on 2026-11-11. `plugin.toml` may set `invert = true` for a value that counts what is left of its scale, such as free space. A layout that shows how full something is then fills with the rest of the scale. Extends D26.
+
+- **Why:** storage reports free space (D37), so its arc was fullest when the disk was emptiest, the opposite of every other arc.
+- **Used by:** the storage built-in. Its arc now fills with the space used, while its number is still the space free, and its short label is "Free" so the two are not confused.
+- **Rejected:** showing used space as the number in the arcs layout, which would need a second label and a second value for one plugin.
+- **Unchanged:** the rows layout, which shows "Storage free" and a number.
+- **Implication:** `invert` needs a maximum. Against a recent peak it is ignored.
 
 ## Phase 1 results
 

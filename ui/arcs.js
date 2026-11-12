@@ -31,13 +31,19 @@ const Arcs = (() => {
   /**
    * How full an arc is, from 0 to 1. A metric with no maximum of its own
    * is measured against `peak`, the highest value it has shown recently.
+   *
+   * `invert` is for a value that counts what is left, such as free space:
+   * the arc then fills with the rest of the scale, so it shows what is used.
    */
-  function share(value, min, max, peak) {
+  function share(value, min, max, peak, invert = false) {
     if (value === null || value === undefined) return 0;
     const lo = min ?? 0;
     const hi = max ?? peak;
     if (!(hi > lo)) return 0;
-    return Math.min(1, Math.max(0, (value - lo) / (hi - lo)));
+    const filled = Math.min(1, Math.max(0, (value - lo) / (hi - lo)));
+    // Only against a real maximum; "the rest" of a recent peak means nothing.
+    const hasMax = max !== null && max !== undefined;
+    return invert && hasMax ? 1 - filled : filled;
   }
 
   /** The highest value among recent points, or null if there is none. */

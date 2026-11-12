@@ -16,8 +16,8 @@ const themeEl = document.getElementById("theme");
 
 /**
  * name -> { plugin, points, reason, min, max, els }
- * `min` and `max` are the scale in force; a plugin can report its own with
- * a reading. `els` belongs to whichever view built it.
+ * `min` and `max` are the scale in force, which arcs fill against; a plugin
+ * can report its own with a reading. `els` belongs to whichever view built it.
  */
 const metrics = new Map();
 /** The theme in use, as sent by the app. */
@@ -111,11 +111,11 @@ const RowsView = {
     let hovered = null;
 
     if (els.line) {
-      const { line, area } = Sparkline.paths(points, now, metric.min, metric.max);
+      const { line, area } = Sparkline.paths(points, now);
       els.line.setAttribute("d", line);
       els.area.setAttribute("d", area);
       if (els.hover !== null) {
-        hovered = Sparkline.nearest(points, now, metric.min, metric.max, els.hover);
+        hovered = Sparkline.nearest(points, now, els.hover);
       }
       els.dot.hidden = !hovered;
       if (hovered) {
@@ -256,7 +256,7 @@ const ArcsView = {
     if (metric === this.hovered) this.drawReadout();
     const { plugin, els } = metric;
     const value = latestValue(metric);
-    const filled = Arcs.share(value, metric.min, metric.max, Arcs.peak(metric.points));
+    const filled = Arcs.share(value, metric.min, metric.max, Arcs.peak(metric.points), plugin.invert);
     els.fill.setAttribute("stroke-dasharray", Arcs.dashes(els.radius, filled).fill);
     els.fill.style.display = value === null ? "none" : "";
     els.value.textContent = withUnit(plugin, value);

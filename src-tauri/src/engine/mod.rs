@@ -49,6 +49,7 @@ pub struct PluginInfo {
     pub decimals: u8,
     pub min: Option<f64>,
     pub max: Option<f64>,
+    pub invert: bool,
     pub builtin: bool,
     pub interval_secs: f64,
 }
@@ -65,6 +66,7 @@ impl From<&Plugin> for PluginInfo {
             decimals: manifest.decimals,
             min: manifest.min,
             max: manifest.max,
+            invert: manifest.invert,
             builtin: plugin.builtin,
             interval_secs: plugin.interval.as_secs_f64(),
         }

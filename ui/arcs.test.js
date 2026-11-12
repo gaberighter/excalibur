@@ -53,6 +53,16 @@ test("share is zero when there is no value or no usable scale", () => {
   assert.equal(Arcs.share(0, 0, null, 0), 0);
 });
 
+test("an inverted metric fills with what is left of its scale", () => {
+  assert.equal(Arcs.share(50, 0, 200, null, true), 0.75);
+  assert.equal(Arcs.share(200, 0, 200, null, true), 0);
+});
+
+test("inverting needs a real maximum", () => {
+  assert.equal(Arcs.share(0.6, 0, null, 2.4, true), 0.25);
+  assert.equal(Arcs.share(null, 0, 200, null, true), 0);
+});
+
 test("peak ignores gaps", () => {
   assert.equal(Arcs.peak([{ value: 1 }, { value: null }, { value: 3 }]), 3);
   assert.equal(Arcs.peak([{ value: null }]), null);

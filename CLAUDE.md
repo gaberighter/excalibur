@@ -39,7 +39,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D53) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D55) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, with each item marked confirmed, proposed or to verify.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -60,6 +60,7 @@ Plugin model (D14–D18, D26–D28, D31, D33–D34):
 - The app runs the executable once per refresh and reads one JSON object from stdout: `{"value": 42.1}`, or `{"value": null, "reason": "…"}`. A non-zero exit or invalid output also means unavailable.
 - Plugins are stateless and report a single number. For rates, the manifest sets `kind = "counter"`, the plugin prints a running total, and the app computes the change per second. CPU usage uses this path too, by printing cumulative percent-seconds.
 - The app does no unit scaling. A plugin prints its value in the unit it wants displayed.
+- `min` and `max` clamp the value and are what arcs fill against; sparklines ignore them and always fit their data (D54). `invert = true` marks a value that counts what is left, so arcs fill with the rest (D55).
 - A plugin may print `min` and `max` beside `value` when its scale depends on the machine; these win over the manifest's (D52). `stats-probe` does this for memory and storage.
 - A plugin still running at its next tick causes that tick to be skipped; it is killed after a timeout (default 5 s).
 - The manifest picks the presentation: `display = "value"` or `"sparkline"`.

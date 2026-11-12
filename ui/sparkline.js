@@ -15,13 +15,13 @@ const Sparkline = (() => {
   }
 
   /**
-   * The vertical range to draw against. A plugin's own `min` and `max` give a
-   * fixed scale (D46); otherwise the range fits the data.
+   * The vertical range to draw against. It always fits the data, so small
+   * movements stay visible; a plugin's `min` and `max` are not used here (D54).
    */
-  function range(points, min, max) {
+  function range(points) {
     const values = points.map((p) => p.value).filter((v) => v !== null);
-    let lo = min ?? Math.min(...values);
-    let hi = max ?? Math.max(...values);
+    const lo = Math.min(...values);
+    const hi = Math.max(...values);
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [0, 1];
     if (hi <= lo) {
       // A flat line: sit on the floor at zero, otherwise in the middle.
@@ -57,9 +57,9 @@ const Sparkline = (() => {
   }
 
   /** SVG path data for the line and the area under it. */
-  function paths(points, now, min, max) {
+  function paths(points, now) {
     const shown = visible(points, now);
-    const scale = range(shown, min, max);
+    const scale = range(shown);
     let line = "";
     let area = "";
     for (const run of segments(shown)) {
@@ -80,10 +80,10 @@ const Sparkline = (() => {
    * The point with a value nearest to a horizontal position, given as a share
    * of the sparkline's width. Returns its position as shares of width and height.
    */
-  function nearest(points, now, min, max, xShare) {
+  function nearest(points, now, xShare) {
     const shown = visible(points, now).filter((p) => p.value !== null);
     if (!shown.length) return null;
-    const scale = range(visible(points, now), min, max);
+    const scale = range(visible(points, now));
     const target = xShare * WIDTH;
     let best = shown[0];
     for (const point of shown) {

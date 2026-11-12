@@ -1,9 +1,10 @@
 name     = "storage"
 label    = "Storage free"
-short    = "Disk"
+short    = "Free"
 unit     = "GB"
 batch    = "storage"
 display  = "value"
 interval = 30.0
 decimals = 0
 min      = 0             # the helper reports the maximum: the size of the disk
+invert   = true          # the value is what is left, so arcs fill with what is used

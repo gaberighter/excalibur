@@ -50,6 +50,9 @@ pub struct Manifest {
     pub decimals: u8,
     pub min: Option<f64>,
     pub max: Option<f64>,
+    /// The value counts what is left of the scale, such as free space.
+    /// Layouts that show how full something is fill with the rest (D55).
+    pub invert: bool,
 }
 
 #[derive(Deserialize)]
@@ -67,6 +70,7 @@ struct Raw {
     decimals: Option<u8>,
     min: Option<f64>,
     max: Option<f64>,
+    invert: Option<bool>,
 }
 
 impl Manifest {
@@ -128,6 +132,7 @@ impl Manifest {
             decimals,
             min: raw.min,
             max: raw.max,
+            invert: raw.invert.unwrap_or(false),
         })
     }
 }
@@ -184,6 +189,13 @@ mod tests {
         assert_eq!(manifest.kind, Kind::Gauge);
         assert_eq!(manifest.interval, None);
         assert_eq!(manifest.decimals, 1);
+        assert!(!manifest.invert);
+    }
+
+    #[test]
+    fn invert_can_be_set() {
+        let manifest = Manifest::parse("command = [\"run\"]\ninvert = true", "free").unwrap();
+        assert!(manifest.invert);
     }
 
     #[test]

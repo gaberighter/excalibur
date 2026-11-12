@@ -17,12 +17,8 @@ test("points older than 60 s are not drawn", () => {
   assert.equal(Sparkline.visible(POINTS, NOW).length, 4);
 });
 
-test("range fits the data when the plugin sets no bounds", () => {
+test("range fits the data", () => {
   assert.deepEqual(Sparkline.range(Sparkline.visible(POINTS, NOW)), [0, 10]);
-});
-
-test("range uses the plugin's min and max when set", () => {
-  assert.deepEqual(Sparkline.range(Sparkline.visible(POINTS, NOW), 0, 100), [0, 100]);
 });
 
 test("a flat line sits on the floor at zero and in the middle otherwise", () => {
@@ -32,7 +28,7 @@ test("a flat line sits on the floor at zero and in the middle otherwise", () => 
 
 test("range of no data is a placeholder", () => {
   assert.deepEqual(Sparkline.range([]), [0, 1]);
-  assert.deepEqual(Sparkline.range([{ value: null }], 0), [0, 1]);
+  assert.deepEqual(Sparkline.range([{ value: null }]), [0, 1]);
 });
 
 test("a missing value splits the line into separate runs", () => {
@@ -47,18 +43,22 @@ test("line places points by time and value, with a gap between runs", () => {
   assert.ok(area.endsWith("L 100.00 24 Z"));
 });
 
-test("values outside the plugin's bounds stay inside the drawing", () => {
-  const { line } = Sparkline.paths([{ time_ms: NOW, value: 250 }], NOW, 0, 100);
-  assert.equal(line, "M 100.00 2.00 L 100.00 2.00");
+test("a small movement on a large value still fills the height", () => {
+  const points = [
+    { time_ms: NOW - 1000, value: 5.9 },
+    { time_ms: NOW, value: 6.0 },
+  ];
+  const { line } = Sparkline.paths(points, NOW);
+  assert.equal(line, "M 98.33 22.00 L 100.00 2.00");
 });
 
 test("nearest finds the closest point that has a value", () => {
-  const hit = Sparkline.nearest(POINTS, NOW, undefined, undefined, 0.7);
+  const hit = Sparkline.nearest(POINTS, NOW, 0.7);
   assert.equal(hit.point.time_ms, 90_000);
   assert.ok(Math.abs(hit.left - 0.8333) < 0.001);
 });
 
 test("nearest is null when nothing has a value", () => {
   const gap = [{ time_ms: 99_000, value: null }];
-  assert.equal(Sparkline.nearest(gap, NOW, undefined, undefined, 0.5), null);
+  assert.equal(Sparkline.nearest(gap, NOW, 0.5), null);
 });
