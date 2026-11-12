@@ -4,6 +4,7 @@ use std::time::Duration;
 pub mod engine;
 
 use engine::{Engine, Event, Paths};
+use tauri::{Emitter, Manager};
 
 const HELPER_NAME: &str = "stats-probe";
 
@@ -62,9 +63,41 @@ pub fn print_samples(duration: Duration) {
     std::thread::sleep(duration);
 }
 
+/// Sent to the window for every engine event.
+const ENGINE_EVENT: &str = "engine";
+
+/// The plugins and their recent history, for a window that has just loaded.
+#[tauri::command]
+fn snapshot(engine: tauri::State<Engine>) -> engine::Snapshot {
+    engine.snapshot()
+}
+
+const MIN_WINDOW_HEIGHT: f64 = 60.0;
+const MAX_WINDOW_HEIGHT: f64 = 2000.0;
+
+/// Makes the window as tall as its content, so every row is visible however
+/// many plugins there are. The width is left alone.
+#[tauri::command]
+fn fit_height(window: tauri::Window, height: f64) -> Result<(), String> {
+    let scale = window.scale_factor().map_err(|e| e.to_string())?;
+    let current = window
+        .inner_size()
+        .map_err(|e| e.to_string())?
+        .to_logical::<f64>(scale);
+    let height = height.clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
+    log::info!(
+        "fitting window height to content: {} -> {height}",
+        current.height
+    );
+    window
+        .set_size(tauri::LogicalSize::new(current.width, height))
+        .map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![snapshot, fit_height])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -73,6 +106,13 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            let handle = app.handle().clone();
+            let engine = Engine::start(dev_paths(), move |event| {
+                if let Err(e) = handle.emit(ENGINE_EVENT, event) {
+                    log::warn!("could not send engine event to the window: {e}");
+                }
+            });
+            app.manage(engine);
             Ok(())
         })
         .run(tauri::generate_context!())

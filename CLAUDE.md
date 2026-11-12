@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Phases 0–3 of `implementation_plan.md` are complete. Phase 1 confirmed the risky parts on the M2, `stats-probe` reports all seven built-in metrics, and the plugin engine runs and is tested (results for each phase are in `decisions.md`). The engine is not yet connected to the window, which is still empty: display, themes, the menu and packaging do not exist yet.
+Phases 0–3 of `implementation_plan.md` are complete. Phase 1 confirmed the risky parts on the M2, `stats-probe` reports all seven built-in metrics, and the plugin engine runs and is tested (results for each phase are in `decisions.md`). Phase 4 is built: the window shows one row per plugin with live values and sparklines, in a plain titled window with a stand-in look (`ui/default-theme.css`). Themes, the borderless window, the menu and packaging do not exist yet.
 
 ## Commands
 
@@ -16,6 +16,7 @@ cargo run -p excalibur -- --print-samples 10   # run the engine without a window
 cargo test --workspace                   # all tests
 cargo test -p excalibur engine::sample   # one module's tests
 cargo test -p stats-probe <test_name>    # a single test in one crate
+node --test ui/sparkline.test.js         # sparkline geometry tests (Node is needed for these only)
 cargo clippy --workspace
 cargo fmt --all
 ```
@@ -23,6 +24,10 @@ cargo fmt --all
 Layout: a Cargo workspace with two members, `src-tauri/` (the app; package `excalibur`, library `excalibur_lib`) and `stats-probe/` (the helper). The frontend is static files in `ui/`, served directly by Tauri with no build step.
 
 The engine is `src-tauri/src/engine/` and has no Tauri dependency. `mod.rs` holds the scheduler thread and the `Engine` handle (`start`, `reload`, `snapshot`); it reports `Event::Loaded` and `Event::Sample` through a callback. The other modules are one concern each: `manifest`, `config`, `discovery`, `command` (lookup and `PATH`), `runner` (processes, timeout, output parsing), `sample` (counter rates, clamping) and `history` (60 s window). Built-in plugin manifests are in `src-tauri/plugins/`. Engine tests use shell scripts as fake plugins and real timing, so they need a Unix shell.
+
+App to window: `src-tauri/src/lib.rs` starts the engine and emits each `Event` to the page as an `engine` event; the page calls the `snapshot` command on load and after every `loaded` event, then appends `sample` events. `ui/sparkline.js` is pure geometry (no DOM), `ui/main.js` builds the rows, and `ui/style.css` is layout only, reading every colour, font and spacing from CSS custom properties. The window's height follows its content through the `fit_height` command.
+
+The page cannot be seen from a terminal. To check layout without launching the app, render `ui/` in a headless Chromium-based browser with `window.__TAURI__` stubbed to return a fixed snapshot, and read the screenshot.
 
 The project, Excalibur, is a small floating desktop window for macOS (Apple Silicon first) that shows system metrics: CPU, memory, storage, temperature, network and GPU. Its working name was `stats_gui`, which is still the name of the local folder (D42).
 

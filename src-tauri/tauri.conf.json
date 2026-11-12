@@ -4,14 +4,16 @@
   "version": "0.1.0",
   "identifier": "com.gaberighter.excalibur",
   "build": {
-    "frontendDist": "../ui"
+    "frontendDist": "../ui",
+    "beforeDevCommand": "cargo build -p stats-probe"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Excalibur",
-        "width": 800,
-        "height": 600,
+        "width": 240,
+        "height": 380,
         "resizable": true,
         "fullscreen": false
       }

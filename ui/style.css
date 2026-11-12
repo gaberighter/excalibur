@@ -1,5 +1,123 @@
-/* Layout only. Colours, fonts and spacing come from the active theme (D11). */
+/* Layout only. Colours, fonts and spacing come from the active theme (D11),
+   through the custom properties used below. */
+
 html,
 body {
   margin: 0;
+  height: 100%;
+}
+
+body {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: var(--pad);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--font);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  overflow: hidden;
+}
+
+#metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--row-gap);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.metric-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+
+.metric-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+/* How long ago the hovered point was; empty unless a sparkline is hovered. */
+.metric-age {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-reading {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-value {
+  font-weight: var(--value-weight);
+}
+
+.metric-unit {
+  margin-left: 0.2em;
+  color: var(--text-muted);
+}
+
+.metric.unavailable .metric-value {
+  color: var(--text-muted);
+}
+
+.metric.unavailable .metric-unit {
+  display: none;
+}
+
+.spark {
+  position: relative;
+  height: var(--spark-height);
+  margin-top: var(--spark-gap);
+}
+
+.spark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.spark-line {
+  fill: none;
+  stroke: var(--spark-line);
+  stroke-width: var(--spark-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark-area {
+  fill: var(--spark-fill);
+  stroke: none;
+}
+
+/* Marks the hovered point. Ringed in the surface colour so it reads on the line. */
+.spark-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  box-sizing: border-box;
+  border: 2px solid var(--surface-solid);
+  border-radius: 50%;
+  background: var(--spark-line);
+  pointer-events: none;
+}
+
+.spark-dot[hidden] {
+  display: none;
+}
+
+#warnings {
+  margin-top: var(--row-gap);
+  color: var(--text-muted);
+  font-size: 0.85em;
 }

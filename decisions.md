@@ -529,7 +529,7 @@ The plugin engine was built on 2026-11-11 as `src-tauri/src/engine/`, with 67 te
 
 Run from a terminal with the seven built-in plugins at their D36 intervals, the engine and its helper runs together used 0.50 s of CPU time in 30 s, about 1.7 % of one core (release build).
 
-Implementation choices made in phase 3 and not previously agreed:
+Implementation choices made in phase 3, agreed on 2026-11-11:
 
 - **Manifest defaults.** `name` defaults to the folder name, `label` to the name, `unit` to empty, `display` to `"value"`, `kind` to `"gauge"` and `decimals` to 1. A manifest with an unknown field is rejected, so a misspelt setting is reported instead of silently ignored.
 - **Shortest interval is 0.1 s**, in manifests and in config.

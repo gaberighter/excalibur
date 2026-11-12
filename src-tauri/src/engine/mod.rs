@@ -79,7 +79,8 @@ pub struct SampleEvent {
     pub reason: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
 pub enum Event {
     /// Plugins were loaded, at start or after a reload.
     Loaded {
