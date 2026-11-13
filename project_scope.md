@@ -41,7 +41,7 @@ Temperature and GPU have no official public API on Apple Silicon. The app tries 
 - Frosted glass by default.
 - The look is defined by a theme, not hard-coded. Themes can be added later and switched quickly.
 - A theme also chooses the layout: rows with sparklines, one compact line per metric, or a small round window of concentric arcs.
-- Right-clicking the window gives a menu to switch theme, pick an accent colour, reload plugins, open the config folder and quit.
+- Right-clicking the window gives a menu to switch theme, pick an accent color, reload plugins, open the config folder and quit.
 
 ### Extensibility
 
@@ -66,7 +66,7 @@ Portability to other operating systems is a bonus, not a first-version requireme
 - Fill bars, and plugins that report more than one value.
 - Remembering window position and size.
 - A menu bar icon.
-- Code signing and notarisation.
+- Code signing and notarization.
 - History persisted to disk, or looking back over hours or days.
 - Linux and Windows metric sources.
 - Anything requiring administrator rights.

@@ -1,4 +1,4 @@
-/* Layout only. Colours, fonts and spacing come from the active theme (D11),
+/* Layout only. Colors, fonts and spacing come from the active theme (D11),
    through the custom properties used below. */
 
 html,
@@ -113,7 +113,7 @@ body {
   stroke: none;
 }
 
-/* Marks the hovered point. Ringed in the surface colour so it reads on the line. */
+/* Marks the hovered point. Ringed in the surface color so it reads on the line. */
 .spark-dot {
   position: absolute;
   width: 8px;

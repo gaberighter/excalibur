@@ -3,11 +3,11 @@
 :root {
   /* A faint tint over the blur, which shows through. */
   --surface: rgb(18 20 26 / 0.3);
-  /* An opaque colour close to the surface, for rings drawn over it. */
+  /* An opaque color close to the surface, for rings drawn over it. */
   --surface-solid: #2b2e36;
   --text: #f5f6f8;
   --text-muted: rgb(236 239 245 / 0.62);
-  /* The accent picked by the user, or this theme's own colour. */
+  /* The accent picked by the user, or this theme's own color. */
   --spark-line: var(--accent, #8ab8ff);
   --spark-fill: color-mix(in srgb, var(--spark-line) 18%, transparent);
   /* The unfilled part of an arc. */

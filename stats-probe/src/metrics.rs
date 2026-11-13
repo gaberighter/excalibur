@@ -96,14 +96,14 @@ fn average_die_temperature<'a>(
     (count > 0).then(|| sum / count as f64)
 }
 
-/// Instantaneous utilisation in percent, a gauge (D36).
+/// Instantaneous utilization in percent, a gauge (D36).
 fn gpu() -> Reading {
     let Ok(gpus) = Gpus::new_with_refreshed_list() else {
         return Reading::unavailable("could not list GPUs");
     };
     match gpus.iter().find_map(|gpu| gpu.usage()) {
         Some(usage) => Reading::value(usage as f64),
-        None => Reading::unavailable("GPU does not report utilisation"),
+        None => Reading::unavailable("GPU does not report utilization"),
     }
 }
 

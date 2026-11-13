@@ -1,4 +1,4 @@
-//! The accent colour: the colour of sparklines and arcs, chosen by the user
+//! The accent color: the color of sparklines and arcs, chosen by the user
 //! and applied over whatever theme is in use (D57).
 
 use serde::Serialize;
@@ -8,7 +8,7 @@ pub struct Preset {
     pub id: &'static str,
     /// The name shown in the menu.
     pub name: &'static str,
-    /// The colour on a dark surface, and a darker one for a light surface.
+    /// The color on a dark surface, and a darker one for a light surface.
     /// Each stands out from the built-in themes' surfaces; a test checks it.
     pub on_dark: &'static str,
     pub on_light: &'static str,
@@ -40,64 +40,64 @@ pub const PRESETS: [Preset; 9] = [
     preset("graphite", "Graphite", "#f5f6f8", "#3f4652"),
 ];
 
-/// Stands for "no accent of my own": each theme uses its own colour.
+/// Stands for "no accent of my own": each theme uses its own color.
 pub const THEME_DEFAULT: &str = "theme";
 
-/// Stands for the accent colour chosen in the operating system's settings.
+/// Stands for the accent color chosen in the operating system's settings.
 pub const SYSTEM: &str = "system";
 /// The page's own keyword for the system accent, used where the app cannot
 /// read the system's setting itself. Web content is often given a fixed
-/// colour for it, so it is a last resort.
+/// color for it, so it is a last resort.
 const SYSTEM_KEYWORD: &str = "AccentColor";
 
 /// The accent as the page receives it, for dark and for light surfaces.
 #[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct Colours {
+pub struct Colors {
     pub on_dark: String,
     pub on_light: String,
 }
 
-/// A preset's id, a colour written as `#rgb` or `#rrggbb`, `system`, or `theme`.
+/// A preset's id, a color written as `#rgb` or `#rrggbb`, `system`, or `theme`.
 pub fn is_valid(value: &str) -> bool {
-    value == THEME_DEFAULT || colours(value).is_some()
+    value == THEME_DEFAULT || colors(value).is_some()
 }
 
-/// The colours a setting stands for, or `None` for the theme's own.
-pub fn colours(value: &str) -> Option<Colours> {
+/// The colors a setting stands for, or `None` for the theme's own.
+pub fn colors(value: &str) -> Option<Colors> {
     if value == SYSTEM {
-        return Some(system_colours(SYSTEM_KEYWORD));
+        return Some(system_colors(SYSTEM_KEYWORD));
     }
     if let Some(preset) = PRESETS.iter().find(|preset| preset.id == value) {
-        return Some(Colours {
+        return Some(Colors {
             on_dark: preset.on_dark.to_string(),
             on_light: preset.on_light.to_string(),
         });
     }
-    // A colour given by hand is used as it is on every surface.
-    is_hex_colour(value).then(|| Colours {
+    // A color given by hand is used as it is on every surface.
+    is_hex_color(value).then(|| Colors {
         on_dark: value.to_string(),
         on_light: value.to_string(),
     })
 }
 
-/// As `colours`, with the system's accent filled in when it could be read.
-pub fn colours_with_system(value: &str, system: Option<&str>) -> Option<Colours> {
+/// As `colors`, with the system's accent filled in when it could be read.
+pub fn colors_with_system(value: &str, system: Option<&str>) -> Option<Colors> {
     match (value, system) {
-        (SYSTEM, Some(colour)) => Some(system_colours(colour)),
-        _ => colours(value),
+        (SYSTEM, Some(color)) => Some(system_colors(color)),
+        _ => colors(value),
     }
 }
 
 /// System accents are mid-tones meant for buttons, too dark for a thin line
 /// on a dark surface, so there they are lightened.
-fn system_colours(base: &str) -> Colours {
-    Colours {
+fn system_colors(base: &str) -> Colors {
+    Colors {
         on_dark: format!("color-mix(in oklab, {base} 55%, white)"),
         on_light: base.to_string(),
     }
 }
 
-fn is_hex_colour(value: &str) -> bool {
+fn is_hex_color(value: &str) -> bool {
     match value.strip_prefix('#') {
         Some(digits) => {
             matches!(digits.len(), 3 | 6) && digits.chars().all(|c| c.is_ascii_hexdigit())
@@ -131,51 +131,51 @@ mod tests {
     }
 
     #[test]
-    fn a_preset_gives_its_two_colours() {
-        let colours = colours("orange").unwrap();
-        assert_eq!(colours.on_dark, "#fdba74");
-        assert_eq!(colours.on_light, "#c2410c");
+    fn a_preset_gives_its_two_colors() {
+        let colors = colors("orange").unwrap();
+        assert_eq!(colors.on_dark, "#fdba74");
+        assert_eq!(colors.on_light, "#c2410c");
     }
 
     #[test]
-    fn a_hex_colour_is_used_on_every_surface() {
-        let colours = colours("#FF8800").unwrap();
-        assert_eq!(colours.on_dark, "#FF8800");
-        assert_eq!(colours.on_light, "#FF8800");
+    fn a_hex_color_is_used_on_every_surface() {
+        let colors = colors("#FF8800").unwrap();
+        assert_eq!(colors.on_dark, "#FF8800");
+        assert_eq!(colors.on_light, "#FF8800");
         assert!(is_valid("#f80"));
     }
 
     #[test]
     fn system_follows_the_operating_system_and_is_lighter_on_dark() {
-        let colours = colours_with_system(SYSTEM, Some("#f7821b")).unwrap();
-        assert_eq!(colours.on_light, "#f7821b");
-        assert_eq!(colours.on_dark, "color-mix(in oklab, #f7821b 55%, white)");
+        let colors = colors_with_system(SYSTEM, Some("#f7821b")).unwrap();
+        assert_eq!(colors.on_light, "#f7821b");
+        assert_eq!(colors.on_dark, "color-mix(in oklab, #f7821b 55%, white)");
         assert!(is_valid(SYSTEM));
     }
 
     #[test]
     fn system_falls_back_to_the_page_keyword_when_it_cannot_be_read() {
-        let colours = colours_with_system(SYSTEM, None).unwrap();
-        assert_eq!(colours.on_light, "AccentColor");
+        let colors = colors_with_system(SYSTEM, None).unwrap();
+        assert_eq!(colors.on_light, "AccentColor");
     }
 
     #[test]
-    fn the_system_colour_does_not_affect_other_choices() {
+    fn the_system_color_does_not_affect_other_choices() {
         assert_eq!(
-            colours_with_system("orange", Some("#007aff")),
-            colours("orange")
+            colors_with_system("orange", Some("#007aff")),
+            colors("orange")
         );
-        assert_eq!(colours_with_system(THEME_DEFAULT, Some("#007aff")), None);
+        assert_eq!(colors_with_system(THEME_DEFAULT, Some("#007aff")), None);
     }
 
     #[test]
-    fn theme_default_and_unknown_values_give_no_colours() {
-        assert_eq!(colours(THEME_DEFAULT), None);
-        assert_eq!(colours("mauve"), None);
+    fn theme_default_and_unknown_values_give_no_colors() {
+        assert_eq!(colors(THEME_DEFAULT), None);
+        assert_eq!(colors("mauve"), None);
     }
 
     #[test]
-    fn only_presets_hex_colours_and_theme_are_valid() {
+    fn only_presets_hex_colors_and_theme_are_valid() {
         assert!(is_valid("blue") && is_valid("#12ab9F") && is_valid(THEME_DEFAULT));
         for bad in [
             "",

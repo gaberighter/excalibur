@@ -80,7 +80,7 @@ test("the label path runs from 9 o'clock to just short of 12 o'clock", () => {
   const path = Arcs.labelPath(90, 60);
   assert.ok(path.startsWith("M 30.00 90 A 60 60 0 0 1 "), path);
   const [x, y] = path.split(" ").slice(-2).map(Number);
-  assert.ok(x < 90 && x > 80, `ends just left of centre, got ${x}`);
+  assert.ok(x < 90 && x > 80, `ends just left of center, got ${x}`);
   near(Math.hypot(x - 90, y - 90), 60, 0.02);
 });
 

@@ -10,7 +10,7 @@ A small floating window for macOS that shows what your Mac is doing: CPU, memory
 
 - **Stays out of the way.** No Dock icon and no menu bar icon; a small window that floats above other windows and starts in the bottom right corner.
 - **Four built-in themes:** Frosted, Frosted Compact, Frosted Round and Plain.
-- **An accent colour** that follows the one chosen in System Settings, or is picked from a menu.
+- **An accent color** that follows the one chosen in System Settings, or is picked from a menu.
 - **Plugins:** every metric is a small program that prints a number. Add your own by dropping a folder in place.
 - **Never asks for a password.** Everything is read without administrator rights.
 
@@ -28,7 +28,7 @@ Then open Excalibur from Applications or Spotlight. To update later:
 brew upgrade --cask excalibur
 ```
 
-The app is not notarised by Apple. The cask clears the quarantine flag so that it opens.
+The app is not notarized by Apple. The cask clears the quarantine flag so that it opens.
 
 ## Using it
 

@@ -217,8 +217,8 @@ mod tests {
 
     #[test]
     fn unknown_field_is_rejected() {
-        let err = Manifest::parse("command = [\"run\"]\ncolour = \"red\"", "x").unwrap_err();
-        assert!(err.contains("colour"), "{err}");
+        let err = Manifest::parse("command = [\"run\"]\ncolor = \"red\"", "x").unwrap_err();
+        assert!(err.contains("color"), "{err}");
     }
 
     #[test]

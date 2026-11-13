@@ -67,11 +67,11 @@ const Arcs = (() => {
    * short of 12 o'clock. Text set on it, anchored at its end, sits beside
    * the start of the arc and cannot leave the disc.
    */
-  function labelPath(centre, radius) {
+  function labelPath(center, radius) {
     const end = -Math.PI / 2 - LABEL_GAP / radius;
-    const x = centre + radius * Math.cos(end);
-    const y = centre + radius * Math.sin(end);
-    return `M ${(centre - radius).toFixed(2)} ${centre} A ${radius} ${radius} 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}`;
+    const x = center + radius * Math.cos(end);
+    const y = center + radius * Math.sin(end);
+    return `M ${(center - radius).toFixed(2)} ${center} A ${radius} ${radius} 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}`;
   }
 
   /** The length of that path: how much room a label has. */

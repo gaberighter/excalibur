@@ -171,7 +171,7 @@ const ArcsView = {
 
   build() {
     const size = theme.width;
-    const centre = size / 2;
+    const center = size / 2;
     const { radii, stroke, fontSize } = Arcs.rings(metrics.size, size);
     const svg = svgEl("svg", "arcs", metricsEl);
     svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
@@ -179,7 +179,7 @@ const ArcsView = {
     svg.setAttribute("height", size);
     const defs = svgEl("defs", "", svg);
 
-    // Wide enough that neighbouring rings' hover areas meet.
+    // Wide enough that neighboring rings' hover areas meet.
     const hitWidth = radii.length > 1 ? radii[0] - radii[1] : stroke * 1.5;
     this.svg = svg;
     this.hovered = null;
@@ -190,20 +190,20 @@ const ArcsView = {
       const group = svgEl("g", "arc", svg);
       // An invisible ring, easier to point at than the arc itself.
       const hit = svgEl("circle", "arc-hit", group);
-      hit.setAttribute("cx", centre);
-      hit.setAttribute("cy", centre);
+      hit.setAttribute("cx", center);
+      hit.setAttribute("cy", center);
       hit.setAttribute("r", radius);
       hit.setAttribute("stroke-width", hitWidth);
       group.addEventListener("mouseenter", () => this.hover(metric));
       group.addEventListener("mouseleave", () => this.hover(null));
       const circle = (className) => {
         const node = svgEl("circle", className, group);
-        node.setAttribute("cx", centre);
-        node.setAttribute("cy", centre);
+        node.setAttribute("cx", center);
+        node.setAttribute("cy", center);
         node.setAttribute("r", radius);
         node.setAttribute("stroke-width", stroke);
         // Dashes start at 3 o'clock; turn them back to 12.
-        node.setAttribute("transform", `rotate(-90 ${centre} ${centre})`);
+        node.setAttribute("transform", `rotate(-90 ${center} ${center})`);
         return node;
       };
       const track = circle("arc-track");
@@ -212,10 +212,10 @@ const ArcsView = {
 
       const path = svgEl("path", "", defs);
       path.id = `arc-label-${index}`;
-      path.setAttribute("d", Arcs.labelPath(centre, radius));
+      path.setAttribute("d", Arcs.labelPath(center, radius));
       const text = svgEl("text", "arc-text", group);
       text.setAttribute("font-size", fontSize);
-      // Centres the text on the ring instead of standing it on top.
+      // Centers the text on the ring instead of standing it on top.
       text.setAttribute("dy", fontSize * 0.36);
       const onPath = svgEl("textPath", "", text);
       onPath.setAttribute("href", `#${path.id}`);
@@ -230,17 +230,17 @@ const ArcsView = {
 
     // The middle of the disc is free. It names the arc being pointed at,
     // in full, and otherwise says so when something is wrong.
-    const centreText = (className, size, y) => {
+    const centerText = (className, size, y) => {
       const node = svgEl("text", className, svg);
-      node.setAttribute("x", centre);
+      node.setAttribute("x", center);
       node.setAttribute("y", y);
       node.setAttribute("text-anchor", "middle");
       node.setAttribute("font-size", size);
       return node;
     };
-    this.readoutLabel = centreText("arc-readout-label", fontSize, centre - fontSize * 0.5);
-    this.readoutValue = centreText("arc-readout-value", fontSize * 1.5, centre + fontSize * 1.1);
-    this.warningEl = centreText("arc-warning", fontSize, centre + fontSize * 0.36);
+    this.readoutLabel = centerText("arc-readout-label", fontSize, center - fontSize * 0.5);
+    this.readoutValue = centerText("arc-readout-value", fontSize * 1.5, center + fontSize * 1.1);
+    this.warningEl = centerText("arc-warning", fontSize, center + fontSize * 0.36);
     this.warningText = svgEl("tspan", "", this.warningEl);
   },
 
@@ -364,7 +364,7 @@ async function applyTheme(next) {
   root.style.setProperty("--window-radius", `${theme.radius}px`);
   root.dataset.theme = theme.id;
   root.dataset.layout = theme.layout;
-  // The user's accent, for themes to use in place of their own colour. A
+  // The user's accent, for themes to use in place of their own color. A
   // theme on a light surface takes the darker of the two.
   if (theme.accent) {
     root.style.setProperty("--accent", theme.accent.on_dark);

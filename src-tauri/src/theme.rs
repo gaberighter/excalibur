@@ -250,7 +250,7 @@ mod tests {
             "radius = 501",
             "layout = \"spiral\"",
             "width = 10",
-            "colour = \"red\"",
+            "color = \"red\"",
             "width = \"wide\"",
         ] {
             assert!(

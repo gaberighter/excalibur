@@ -1,6 +1,6 @@
 # Writing a theme
 
-A theme decides how Excalibur's window looks: its colours, fonts and spacing, the material behind it, its width and corners, and which layout the metrics are arranged in. A theme is a folder with two files.
+A theme decides how Excalibur's window looks: its colors, fonts and spacing, the material behind it, its width and corners, and which layout the metrics are arranged in. A theme is a folder with two files.
 
 Themes of your own go in `~/.config/excalibur/themes/`, one folder each. Choose **Open Config Folder** from the window's right-click menu to get there.
 
@@ -57,7 +57,7 @@ Every setting is optional. A misspelt setting is reported as a warning and the t
 | Setting | Default | Meaning |
 |---|---|---|
 | `name` | the folder's name | The name shown in the menu. |
-| `effect` | `"none"` | The material behind the page. `"none"` gives a plain window, coloured only by the stylesheet. |
+| `effect` | `"none"` | The material behind the page. `"none"` gives a plain window, colored only by the stylesheet. |
 | `layout` | `"rows"` | How the metrics are arranged; see below. |
 | `radius` | `0` | Corner radius of the window, in points, from 0 to 500. |
 | `width` | `220` | Width of the window, in points, from 120 to 1000. |
@@ -86,12 +86,12 @@ The `arcs` layout uses a square window, as tall as it is wide. Set `radius` to h
 
 ## `theme.css`: the page
 
-The stylesheet sets custom properties on `:root`. Excalibur's own stylesheet handles layout only and takes every colour, font and measurement from these. A property you leave out has no fallback, so set them all.
+The stylesheet sets custom properties on `:root`. Excalibur's own stylesheet handles layout only and takes every color, font and measurement from these. A property you leave out has no fallback, so set them all.
 
 | Property | Used for |
 |---|---|
 | `--surface` | The window's background. |
-| `--surface-solid` | An opaque colour close to the surface. The dot that follows the pointer along a sparkline is ringed in it. |
+| `--surface-solid` | An opaque color close to the surface. The dot that follows the pointer along a sparkline is ringed in it. |
 | `--text` | Values. |
 | `--text-muted` | Labels, units and the warnings line. |
 | `--spark-line` | Sparkline lines, the hover dot and the filled part of arcs. |
@@ -106,23 +106,23 @@ The stylesheet sets custom properties on `:root`. Excalibur's own stylesheet han
 | `--spark-gap` | In the `rows` layout, space between a row's text and its sparkline. |
 | `--spark-width` | Thickness of a sparkline's line. |
 
-### The accent colour
+### The accent color
 
-The user can pick an accent colour from the right-click menu, and by default it follows the accent chosen in System Settings. Excalibur hands it to the page as two properties:
+The user can pick an accent color from the right-click menu, and by default it follows the accent chosen in System Settings. Excalibur hands it to the page as two properties:
 
 | Property | Meaning |
 |---|---|
 | `--accent` | The accent, in a shade suited to a dark surface. |
 | `--accent-on-light` | The accent, in a darker shade suited to a light surface. |
 
-A theme uses the accent by asking for it, with its own colour as the fallback for when the user chooses "Theme Default":
+A theme uses the accent by asking for it, with its own color as the fallback for when the user chooses "Theme Default":
 
 ```css
 --spark-line: var(--accent, #f4a261);
 --spark-fill: color-mix(in srgb, var(--spark-line) 18%, transparent);
 ```
 
-A theme with a light surface should use `--accent-on-light`. A theme that never mentions either keeps its own colours whatever the user picks.
+A theme with a light surface should use `--accent-on-light`. A theme that never mentions either keeps its own colors whatever the user picks.
 
 ### Light and dark
 
@@ -155,6 +155,6 @@ A stylesheet is ordinary CSS and can style the page's elements directly. The row
 ## When something is wrong
 
 - **The theme is not in the menu:** the folder has no `theme.toml` or no `theme.css`, or a setting is invalid. There is a "1 warning" line in the window; hover over it for the file and the reason.
-- **The window has no colour at all:** the stylesheet is missing properties, or has a syntax error near the top.
+- **The window has no color at all:** the stylesheet is missing properties, or has a syntax error near the top.
 - **The effect does not show:** `--surface` is opaque.
 - **The configured theme is not used:** if its folder is missing, Excalibur falls back to Frosted and says so in a warning. A theme picked from the menu also takes precedence over `theme` in `config.toml`; see [configuration.md](configuration.md).

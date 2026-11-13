@@ -1,17 +1,17 @@
-//! Reads the accent colour chosen in the operating system's settings (D58).
+//! Reads the accent color chosen in the operating system's settings (D58).
 //!
 //! The page cannot be asked for it: the web's `AccentColor` keyword gives
 //! web content a fixed blue whatever the setting is.
 
-/// The system's accent colour as `#rrggbb`, or `None` where it cannot be read.
+/// The system's accent color as `#rrggbb`, or `None` where it cannot be read.
 pub fn current() -> Option<&'static str> {
     os::current()
 }
 
 /// macOS stores the accent as a number, and stores nothing for the default,
-/// "Multicolour", which draws controls in blue.
+/// "Multicolor", which draws controls in blue.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-fn macos_colour(setting: Option<i64>) -> Option<&'static str> {
+fn macos_color(setting: Option<i64>) -> Option<&'static str> {
     Some(match setting {
         None | Some(4) => "#007aff",
         Some(-1) => "#989898",
@@ -51,7 +51,7 @@ mod os {
             Some(value) => Some(value.downcast::<CFNumber>()?.to_i64()?),
             None => None,
         };
-        super::macos_colour(setting)
+        super::macos_color(setting)
     }
 }
 
@@ -67,25 +67,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn no_setting_is_the_multicolour_default_blue() {
-        assert_eq!(macos_colour(None), Some("#007aff"));
-        assert_eq!(macos_colour(Some(4)), Some("#007aff"));
+    fn no_setting_is_the_multicolor_default_blue() {
+        assert_eq!(macos_color(None), Some("#007aff"));
+        assert_eq!(macos_color(Some(4)), Some("#007aff"));
     }
 
     #[test]
-    fn each_macos_accent_has_a_colour() {
-        let colours: Vec<_> = (-1..=6).map(|n| macos_colour(Some(n)).unwrap()).collect();
-        assert_eq!(colours[2], "#f7821b", "1 is orange");
-        for (index, colour) in colours.iter().enumerate() {
-            assert!(colour.starts_with('#') && colour.len() == 7);
+    fn each_macos_accent_has_a_color() {
+        let colors: Vec<_> = (-1..=6).map(|n| macos_color(Some(n)).unwrap()).collect();
+        assert_eq!(colors[2], "#f7821b", "1 is orange");
+        for (index, color) in colors.iter().enumerate() {
+            assert!(color.starts_with('#') && color.len() == 7);
             // Blue appears once, as 4; everything else is distinct.
-            assert!(!colours[..index].contains(colour));
+            assert!(!colors[..index].contains(color));
         }
     }
 
     #[test]
     fn an_unknown_setting_gives_nothing() {
-        assert_eq!(macos_colour(Some(42)), None);
+        assert_eq!(macos_color(Some(42)), None);
     }
 
     #[cfg(target_os = "macos")]

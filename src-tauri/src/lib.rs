@@ -147,7 +147,7 @@ const THEME_EVENT: &str = "theme";
 const THEME_ITEM_PREFIX: &str = "theme:";
 /// Menu item ids for accents are this prefix followed by the preset's id.
 const ACCENT_ITEM_PREFIX: &str = "accent:";
-/// The accent item that goes back to the colour set in config.
+/// The accent item that goes back to the color set in config.
 const ACCENT_FROM_CONFIG: &str = "config";
 const RELOAD_ITEM: &str = "reload";
 const OPEN_CONFIG_ITEM: &str = "open-config";
@@ -162,7 +162,7 @@ fn snapshot(engine: tauri::State<Engine>) -> engine::Snapshot {
 const MIN_WINDOW_HEIGHT: f64 = 60.0;
 const MAX_WINDOW_HEIGHT: f64 = 2000.0;
 
-/// How often the system's accent colour is read again.
+/// How often the system's accent color is read again.
 const SYSTEM_ACCENT_CHECK: Duration = Duration::from_secs(2);
 
 /// Gap between the window and the screen's edges where it first appears.
@@ -309,7 +309,7 @@ impl ThemeState {
             radius: active.theme.radius,
             width: active.theme.width,
             layout: active.theme.layout,
-            accent: accent::colours_with_system(
+            accent: accent::colors_with_system(
                 self.accent.lock().unwrap().in_force(),
                 system_accent::current(),
             ),
@@ -327,8 +327,8 @@ struct ThemePayload {
     radius: f64,
     width: f64,
     layout: theme::Layout,
-    /// The user's accent colour, if they have one; otherwise the theme's own.
-    accent: Option<accent::Colours>,
+    /// The user's accent color, if they have one; otherwise the theme's own.
+    accent: Option<accent::Colors>,
     warnings: Vec<String>,
 }
 
@@ -383,8 +383,8 @@ fn send_theme(app: &AppHandle) {
     }
 }
 
-/// Changes the accent colour while the app is running, and remembers the
-/// choice. `picked` is a preset's id, `theme` for each theme's own colour,
+/// Changes the accent color while the app is running, and remembers the
+/// choice. `picked` is a preset's id, `theme` for each theme's own color,
 /// or `None` to go back to whatever config says.
 fn pick_accent(app: &AppHandle, picked: Option<String>) {
     let state = app.state::<ThemeState>();
@@ -424,14 +424,14 @@ fn show_menu(window: tauri::Window, state: tauri::State<ThemeState>) -> Result<(
     menu.popup(window).map_err(|e| e.to_string())
 }
 
-/// The accent colours, with the one in force ticked.
+/// The accent colors, with the one in force ticked.
 fn accent_menu(
     window: &tauri::Window,
     state: &ThemeState,
 ) -> tauri::Result<tauri::menu::Submenu<tauri::Wry>> {
     let choice = state.accent.lock().unwrap();
     let in_force = choice.in_force();
-    // Ticked when the colour comes from config and not from this menu.
+    // Ticked when the color comes from config and not from this menu.
     let from_config = choice.picked.is_none() && choice.config.is_some();
     let item = |id: &str, name: &str, checked: bool| {
         CheckMenuItemBuilder::with_id(format!("{ACCENT_ITEM_PREFIX}{id}"), name)

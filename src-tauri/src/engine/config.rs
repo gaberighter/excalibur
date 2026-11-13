@@ -13,7 +13,7 @@ const MIN_INTERVAL_SECS: f64 = 0.1;
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     pub theme: String,
-    /// The colour of sparklines and arcs: a preset's name, or a colour such
+    /// The color of sparklines and arcs: a preset's name, or a color such
     /// as `#ff8800`, `system` or `theme`. Without it the accent follows the
     /// system (D57, D59).
     pub accent: Option<String>,
@@ -77,7 +77,7 @@ impl Config {
         {
             let presets: Vec<&str> = crate::accent::PRESETS.iter().map(|p| p.id).collect();
             return Err(format!(
-                "'accent' must be a colour such as \"#ff8800\" or one of: {}",
+                "'accent' must be a color such as \"#ff8800\" or one of: {}",
                 presets.join(", ")
             ));
         }
@@ -151,17 +151,17 @@ mod tests {
         assert!(Config::parse("interval = 0").is_err());
         assert!(Config::parse("timeout = -1").is_err());
         assert!(Config::parse("[intervals]\ncpu = 0.01").is_err());
-        assert!(Config::parse("colour = \"red\"").is_err());
+        assert!(Config::parse("color = \"red\"").is_err());
         assert!(Config::parse("accent = \"mauve\"").is_err());
     }
 
     #[test]
-    fn accent_can_be_a_preset_or_a_colour() {
+    fn accent_can_be_a_preset_or_a_color() {
         assert_eq!(Config::default().accent, None);
         let preset = Config::parse("accent = \"orange\"").unwrap();
         assert_eq!(preset.accent.as_deref(), Some("orange"));
-        let colour = Config::parse("accent = \"#ff8800\"").unwrap();
-        assert_eq!(colour.accent.as_deref(), Some("#ff8800"));
+        let color = Config::parse("accent = \"#ff8800\"").unwrap();
+        assert_eq!(color.accent.as_deref(), Some("#ff8800"));
     }
 
     #[test]

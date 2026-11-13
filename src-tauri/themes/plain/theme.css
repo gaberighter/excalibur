@@ -5,7 +5,7 @@
   --surface-solid: #1c1f26;
   --text: #f2f4f8;
   --text-muted: #9aa3b2;
-  /* The accent picked by the user, or this theme's own colour. */
+  /* The accent picked by the user, or this theme's own color. */
   --spark-line: var(--accent, #6ea8fe);
   --spark-fill: color-mix(in srgb, var(--spark-line) 16%, transparent);
   /* The unfilled part of an arc. */

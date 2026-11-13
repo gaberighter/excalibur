@@ -22,9 +22,9 @@ What the project is built with, as built. The reasoning behind each choice is in
 |---|---|
 | `tauri` (with `macos-private-api`) | The window, the right-click menu, window effects, and events to the page. |
 | `serde`, `serde_json`, `toml` | Reading plugin output, manifests, themes, config and state. |
-| `sysinfo` (in `stats-probe`) | Temperature sensors, GPU utilisation and network totals. |
+| `sysinfo` (in `stats-probe`) | Temperature sensors, GPU utilization and network totals. |
 | `libc` | In `stats-probe`: CPU time, memory and disk statistics. In the app: stopping a timed-out plugin and everything it started. |
-| `core-foundation` | Reading the macOS accent colour setting. |
+| `core-foundation` | Reading the macOS accent color setting. |
 | `tauri-plugin-log`, `log` | Log output in debug builds. |
 | `tempfile` (tests only) | Scratch folders for engine tests. |
 
@@ -33,7 +33,7 @@ What the project is built with, as built. The reasoning behind each choice is in
 - **The app** (`src-tauri/`). Finds plugins and themes, runs plugins on a schedule, turns counters into rates, keeps 60 seconds of history in memory, and sends samples to the page. It collects no metrics itself.
 - **`stats-probe`** (`stats-probe/`). Reports any of the seven built-in metrics as one JSON object keyed by name. All metric code that is specific to an operating system is here, so supporting another system means extending this binary (D2).
 
-The app has one piece of system-specific code of its own: reading the macOS accent colour (D58).
+The app has one piece of system-specific code of its own: reading the macOS accent color (D58).
 
 ## Tauri settings the app depends on
 
@@ -70,7 +70,7 @@ Temperature and GPU were confirmed on a MacBook Air M2 only. On another Mac they
 | `plugin.toml` | A plugin's manifest | D26, D34, D45, D46, D53, D55 |
 | Plugin output | `{"value": 42.1}`, optionally with `min` and `max`; or `{"value": null, "reason": "…"}` | D27, D52 |
 | `theme.toml` | A theme's window settings: effect, radius, width, layout | D30, D50 |
-| `theme.css` | A theme's colours, fonts and spacing, as CSS custom properties | D19 |
+| `theme.css` | A theme's colors, fonts and spacing, as CSS custom properties | D19 |
 | `config.toml` | The user's settings; optional, and never written by the app | D35, D47, D57 |
 | `state.toml` | Written by the app: the theme and accent picked from the menu | D40, D57 |
 
@@ -88,7 +88,7 @@ User files are in `~/.config/excalibur/` (D20). Built-in plugins and themes are 
 - Source and releases: <https://github.com/gaberighter/excalibur>, public.
 - `scripts/build-release.sh` builds `Excalibur.app` with the helper, plugins and themes inside, signs it ad hoc and zips it.
 - The tap, <https://github.com/gaberighter/homebrew-tap>, holds a cask that downloads the zip from the release, installs the app and clears the quarantine flag (D25).
-- Builds are not signed with a Developer ID and not notarised (D25).
+- Builds are not signed with a Developer ID and not notarized (D25).
 - Releases are made by hand; the steps are in `CLAUDE.md`.
 
 ## Development prerequisites

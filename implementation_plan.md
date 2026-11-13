@@ -1,6 +1,6 @@
 # Implementation Plan
 
-> **Status, 2026-11-12:** all nine phases are done and version 0.1.0 is published. What each phase found, and what was added or changed along the way (the batched helper, the compact and round layouts, the accent colour), is recorded in [decisions.md](decisions.md). Three things in this plan were not done: an install on a second Mac, a `brew upgrade` to a later release, and automatic release builds. The rest of this document is the plan as it was written.
+> **Status, 2026-11-13:** all nine phases are done and version 0.1.1 is published. What each phase found, and what was added or changed along the way (the batched helper, the compact and round layouts, the accent color), is recorded in [decisions.md](decisions.md). One thing in this plan was not done: automatic release builds. The install on a second Mac and the `brew upgrade` to a later release were both checked after this plan's phases ended. The rest of this document is the plan as it was written.
 
 How the first version gets built. Decision numbers (D…) and open questions (O…) refer to [decisions.md](decisions.md); stack details are in [stack.md](stack.md).
 
@@ -20,13 +20,13 @@ How the first version gets built. Decision numbers (D…) and open questions (O�
 | 3 | Plugin engine | The app runs plugins and produces values and history, tested without a UI |
 | 4 | Window and metric display | All metrics visible in a window, updating live |
 | 5 | Themes | Frosted default theme, switchable at runtime |
-| 6 | Window behaviour and menu | Borderless, Dock-less, right-click menu |
+| 6 | Window behavior and menu | Borderless, Dock-less, right-click menu |
 | 7 | Packaging and Homebrew tap | `brew install` works on a second Mac |
 | 8 | Documentation | README, plugin and theme guides, commands in CLAUDE.md |
 
 ## Phase 0: Project setup
 
-- Initialise git and create the GitHub repository.
+- Initialize git and create the GitHub repository.
 - Install prerequisites: Rust toolchain, Xcode Command Line Tools, Tauri CLI.
 - Create a Cargo workspace with two members: the Tauri app and `stats-probe` (D22, D32).
 - Scaffold the Tauri v2 app with a static HTML/CSS/JS frontend and no bundler (D4).
@@ -128,9 +128,9 @@ Tests, using small shell scripts as fake plugins:
 - Switch themes at runtime, without a restart if 1e allowed it.
 - Fall back to the default theme if the configured one is missing or invalid.
 
-**Done when:** switching between the two themes changes blur, colours, radius and width, and an unknown theme name in config falls back cleanly.
+**Done when:** switching between the two themes changes blur, colors, radius and width, and an unknown theme name in config falls back cleanly.
 
-## Phase 6: Window behaviour and menu
+## Phase 6: Window behavior and menu
 
 - Borderless window with a drag region covering the body (D23), always in front (D48), starting in the bottom right corner of the screen (D49).
 - Hidden from the Dock and the app switcher (D23).

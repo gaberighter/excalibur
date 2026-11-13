@@ -30,7 +30,7 @@ All entries below were decided on 2026-11-11.
 | D20 | File layout | `~/.config/excalibur` |
 | D21 | Built-in delivery | Built-ins ship in the app bundle; the user folder overrides them |
 | D22 | Built-in implementation | One Rust helper binary with a subcommand per metric |
-| D23 | Window behaviour | Borderless, hidden from the Dock |
+| D23 | Window behavior | Borderless, hidden from the Dock |
 | D24 | Controls | Right-click menu on the window |
 | D25 | Signing | Unsigned; the cask clears the quarantine flag |
 | D26 | Manifest | `plugin.toml` in a folder per plugin |
@@ -64,9 +64,11 @@ All entries below were decided on 2026-11-11.
 | D54 | Sparkline scale | Sparklines always fit their own data (amends D46) |
 | D55 | Inverted fill | Optional `invert` in the manifest; the storage arc fills with used space |
 | D56 | Compact layout | One line per metric, as the Frosted Compact theme |
-| D57 | Accent colour | Presets in the right-click menu; one accent for all themes; colours lines and arcs |
-| D58 | System accent | An accent option that follows the colour chosen in System Settings |
+| D57 | Accent color | Presets in the right-click menu; one accent for all themes; colors lines and arcs |
+| D58 | System accent | An accent option that follows the color chosen in System Settings |
 | D59 | Default accent | A fresh install starts on System Accent |
+| D60 | Plain theme | Corner radius 12, the same as Frosted |
+| D61 | Spelling | American spelling everywhere: the app, the documents and the code |
 
 ## Details
 
@@ -140,7 +142,7 @@ A plugin declares how its metric should be presented. The motivating example: so
 The default look is frosted glass. The look is abstracted into themes so that a new one can be made later and switched to quickly and easily.
 
 - **Rejected:** hard-coding the frosted look into the app.
-- **Implication:** no colours, blur or window styling in the app's own code or base stylesheet; all of it belongs to the active theme. Switching themes should not need a rebuild.
+- **Implication:** no colors, blur or window styling in the app's own code or base stylesheet; all of it belongs to the active theme. Switching themes should not need a rebuild.
 
 ### D12. Refresh rate: configurable, 1–2 s baseline
 
@@ -195,7 +197,7 @@ There is one app-wide default. A plugin's manifest can suggest its own rate, and
 
 ### D19. Theme format: a folder with a stylesheet and a settings file
 
-Each theme is a folder containing a stylesheet (colours, fonts and spacing as CSS variables) and a small settings file for window-level things CSS cannot do, such as the native blur effect. Resolves O4.
+Each theme is a folder containing a stylesheet (colors, fonts and spacing as CSS variables) and a small settings file for window-level things CSS cannot do, such as the native blur effect. Resolves O4.
 
 - **Rejected:** a single CSS file (cannot control native blur); a settings file only (themes limited to what the app anticipated).
 
@@ -221,7 +223,7 @@ A single small helper binary provides all built-in metrics, one subcommand per m
 - **Rejected:** one binary per metric; shell scripts (fragile, macOS-specific, cannot read temperature or GPU).
 - **Implication:** this binary is where OS-specific code lives, and where future ports are made (D2). The helper's name is not yet chosen.
 
-### D23. Window behaviour: borderless, hidden from the Dock
+### D23. Window behavior: borderless, hidden from the Dock
 
 No title bar or traffic-light buttons, and no Dock icon or app-switcher entry. Resolves O6.
 
@@ -237,7 +239,7 @@ Right-clicking the window offers theme switching, reloading plugins, opening the
 
 ### D25. Signing: unsigned, quarantine cleared by the cask
 
-Builds are not signed or notarised. The Homebrew cask removes the quarantine flag after install so the app opens without a Gatekeeper warning. Resolves O7.
+Builds are not signed or notarized. The Homebrew cask removes the quarantine flag after install so the app opens without a Gatekeeper warning. Resolves O7.
 
 - **Rejected:** approving manually on each Mac; paying for an Apple Developer account.
 - **Revisit if:** anyone else is going to install the app.
@@ -310,13 +312,13 @@ width  = 220           # default width in px
 Resolves O11 and completes D19.
 
 - **Rejected:** a settings file limited to the window effect and radius.
-- **Why:** a theme can then be compact or roomy as well as differently coloured.
+- **Why:** a theme can then be compact or roomy as well as differently colored.
 
 ### D31. Units: fixed per plugin, shown as printed
 
 The manifest's `unit` is a label. The app shows the number the plugin produces followed by that label, and does no scaling.
 
-- **Rejected:** the app recognising units such as bytes and scaling them to KB, MB or GB.
+- **Rejected:** the app recognizing units such as bytes and scaling them to KB, MB or GB.
 - **Implication:** each plugin must print its value already in the unit it wants shown. For counters (D16) the running total must be in that unit too: a network plugin showing MB/s prints megabytes so far, as a decimal.
 - **Accepted cost:** one unit must suit the whole range, so small throughput may read as 0.0 MB/s.
 
@@ -449,7 +451,7 @@ Decided on 2026-11-11 after the phase 1 measurements. The app no longer launches
 
 ### D44. Temperature is the average of the die sensors
 
-The M2 exposes 34 temperature sensors and no single "CPU temperature". The `temperature` built-in reports the average of the die sensors (labelled `tdie`).
+The M2 exposes 34 temperature sensors and no single "CPU temperature". The `temperature` built-in reports the average of the die sensors (labeled `tdie`).
 
 - **Rejected:** the hottest die sensor.
 - **Implication:** if no die sensors are found, as may happen on other Mac models, the metric is unavailable (D6). Sensor labels on other chips need checking before the app is used on another Mac.
@@ -572,36 +574,47 @@ Decided on 2026-11-11, as a second compact option beside the round window (D51),
 - **Measured:** 220 × 159 with the seven built-ins, about 43 % of the area of the rows layout.
 - **Implementation:** it reuses the rows layout's code and differs only in the stylesheet.
 
-### D57. An accent colour, picked from the menu
+### D57. An accent color, picked from the menu
 
 Decided on 2026-11-11. The right-click menu gains an "Accent Color" submenu: Theme Default, then nine presets (Blue, Teal, Green, Yellow, Orange, Red, Pink, Purple, Graphite). The four built-in themes (Frosted, Frosted Compact, Frosted Round, Plain) were agreed as the default set at the same time.
 
 - **One accent for all themes.** It follows the user from theme to theme. Rejected: remembering an accent per theme.
-- **It colours lines and arcs:** the sparkline and its faint fill, the hover dot, and the filled part of each arc. Text keeps the theme's own colours. Rejected: colouring the values too.
-- **Rejected for the picker:** the macOS colour panel, alone or as a "Custom…" item.
-- **Any other colour** can be set by hand as `accent = "#ff8800"` in `config.toml`, which also accepts a preset's name. When config sets one, the submenu shows a "From config.toml" item.
+- **It colors lines and arcs:** the sparkline and its faint fill, the hover dot, and the filled part of each arc. Text keeps the theme's own colors. Rejected: coloring the values too.
+- **Rejected for the picker:** the macOS color panel, alone or as a "Custom…" item.
+- **Any other color** can be set by hand as `accent = "#ff8800"` in `config.toml`, which also accepts a preset's name. When config sets one, the submenu shows a "From config.toml" item.
 - **Remembered in `state.toml`**, where it takes precedence over config, as the theme does (D40).
-- **How themes use it:** the app gives the page two custom properties, `--accent` and `--accent-on-light`, and a theme's stylesheet uses them where it wants the accent, falling back to its own colour: `--spark-line: var(--accent, #8ab8ff)`. A theme that ignores them is unaffected.
-- **Two colours per preset:** a lighter one for dark surfaces and a darker one for light surfaces, such as Plain in light mode. A test checks that every preset has at least 3:1 contrast against the built-in themes' surfaces. A colour set by hand is used as it is everywhere, and is not checked.
+- **How themes use it:** the app gives the page two custom properties, `--accent` and `--accent-on-light`, and a theme's stylesheet uses them where it wants the accent, falling back to its own color: `--spark-line: var(--accent, #8ab8ff)`. A theme that ignores them is unaffected.
+- **Two colors per preset:** a lighter one for dark surfaces and a darker one for light surfaces, such as Plain in light mode. A test checks that every preset has at least 3:1 contrast against the built-in themes' surfaces. A color set by hand is used as it is everywhere, and is not checked.
 
 ### D58. An accent option that follows the system
 
-Decided on 2026-11-11. The Accent Color submenu gains "System Accent", below Theme Default, and `accent = "system"` is accepted in `config.toml`. It uses the accent colour chosen in the operating system's settings. The choices made for D57 were agreed at the same time.
+Decided on 2026-11-11. The Accent Color submenu gains "System Accent", below Theme Default, and `accent = "system"` is accepted in `config.toml`. It uses the accent color chosen in the operating system's settings. The choices made for D57 were agreed at the same time.
 
-- **How:** the app reads the setting itself and sends the colour to the page. On macOS that is the `AppleAccentColor` preference, mapped to the eight colours macOS offers; "Multicolour", the default, is blue. It is read again every 2 seconds while System Accent is in use, so a change in System Settings shows up without a restart.
+- **How:** the app reads the setting itself and sends the color to the page. On macOS that is the `AppleAccentColor` preference, mapped to the eight colors macOS offers; "Multicolor", the default, is blue. It is read again every 2 seconds while System Accent is in use, so a change in System Settings shows up without a restart.
 - **Corrected on 2026-11-11.** It was first built on the web's own keyword for the system accent (`AccentColor`), so that the app would need no macOS-specific code. That did not work: web content is given a fixed blue whatever the setting is, which went unnoticed because the machine's accent was blue at the time. The keyword is now only the fallback on systems where the setting cannot be read.
 - **This is OS-specific code in the app**, in `system_accent.rs`, which D2 asked to keep out. It is a few lines behind one function, and other systems fall back to the keyword until they get their own reader.
-- **Lightened on dark surfaces.** System accents are mid-tones meant for buttons, and are too dark for a thin line on a dark surface, so there the colour is mixed with white (55 % colour). On a light surface it is used as it is.
+- **Lightened on dark surfaces.** System accents are mid-tones meant for buttons, and are too dark for a thin line on a dark surface, so there the color is mixed with white (55 % color). On a light surface it is used as it is.
 - **Contrast:** at that mix every macOS accent has at least 3:1 against the frosted surface at its lightest, except purple at about 2.7:1.
 - **Checked** from captures with the system accent set to orange: arcs on Frosted Round and sparklines on Frosted are drawn in a light orange. Not checked: that a change made in System Settings is picked up while the app is running.
 - **Whether it is the default** was left open here and settled by D59.
 
 ### D59. A fresh install starts on System Accent
 
-Decided on 2026-11-11. When no accent has been picked from the menu and none is set in `config.toml`, the accent follows the system (D58). Before this, each theme used its own colour.
+Decided on 2026-11-11. When no accent has been picked from the menu and none is set in `config.toml`, the accent follows the system (D58). Before this, each theme used its own color.
 
-- **Theme Default is still in the menu**, and `accent = "theme"` is accepted in config, for each theme's own colour.
-- **Implication:** the colours written in the built-in themes' stylesheets are now seen only when Theme Default is chosen, or by a page that does not support the system accent keyword.
+- **Theme Default is still in the menu**, and `accent = "theme"` is accepted in config, for each theme's own color.
+- **Implication:** the colors written in the built-in themes' stylesheets are now seen only when Theme Default is chosen, or by a page that does not support the system accent keyword.
+
+### D60. Plain has the same corner radius as Frosted
+
+Decided on 2026-11-13. Plain's `radius` goes from 10 to 12, so the two row themes differ only in their surface and colors. Their width and spacing were already the same (see the phase 5 results).
+
+### D61. American spelling everywhere
+
+Decided on 2026-11-13. The menu already said "Accent Color", to match macOS, while the documents and the code said "colour". Everything now uses American spelling: the documents, comments, messages, and names in the code (`accent::colors`, `center` in the arcs view).
+
+- **Rejected:** British spelling in the menu, which would not match the system's own menus.
+- **Nothing a user can set was renamed.** No manifest field, config setting or theme property contained one of the changed words.
 
 ## Phase 1 results
 
@@ -613,7 +626,7 @@ Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
 | 1b | GPU usage without sudo | Works. The IORegistry entry for the GPU publishes "Device Utilization %". Read with the `ioreg` command; reading it from Rust is still to be written. |
 | 1c | Raw CPU time for percent-seconds (D33) | Works, using the macOS host statistics call from the `libc` crate. Readings were in the same range as `top`. The tick counter is 32-bit and wraps after roughly 62 days of uptime, which D16 already handles as one missed sample. |
 | 1d | Cost of launching seven processes per second | About 5.5 % of one core at 1 s, 2.8 % at 2 s; slowest cycle 34 ms. Led to D43. |
-| 1e | Runtime window effects and right-click menu on a borderless, Dock-less window | Works. Checked by hand: frosted borderless panel with rounded corners, no Dock or app-switcher entry, draggable by its body, right-click menu, switching between a frosted and a plain theme (blur, colour and width) without a restart, and quit from the menu. |
+| 1e | Runtime window effects and right-click menu on a borderless, Dock-less window | Works. Checked by hand: frosted borderless panel with rounded corners, no Dock or app-switcher entry, draggable by its body, right-click menu, switching between a frosted and a plain theme (blur, color and width) without a restart, and quit from the menu. |
 
 ## Phase 2 results
 
@@ -686,7 +699,7 @@ Themes were built on 2026-11-11. Checked from captures of the app's own window:
 
 **Changed on 2026-11-11:** the Plain theme was given the same width and spacing as Frosted, so both windows are now 220 px wide and the same height. The 260 px figure above is how Plain was first built.
 
-Switching themes while the app is running goes through the right-click menu. It was checked by hand on 2026-11-11: the menu lists both themes with the current one ticked, and switching in either direction changes the material, colours, width and spacing without a restart, with all rows still fitting.
+Switching themes while the app is running goes through the right-click menu. It was checked by hand on 2026-11-11: the menu lists both themes with the current one ticked, and switching in either direction changes the material, colors, width and spacing without a restart, with all rows still fitting.
 
 Implementation choices made in phase 5 and not previously agreed:
 
@@ -705,7 +718,7 @@ The custom properties a theme's stylesheet sets are: `--surface`, `--surface-sol
 
 ## Phase 6 results
 
-Window behaviour and the menu were built on 2026-11-11. Checked from captures of the app's own window and from what macOS reports about it:
+Window behavior and the menu were built on 2026-11-11. Checked from captures of the app's own window and from what macOS reports about it:
 
 | Check | Result |
 |---|---|
@@ -742,11 +755,11 @@ Implementation choices not previously agreed:
 - **An unavailable metric** shows its label and a dash, with an empty track.
 - **Pointing at an arc** names it in full in the middle of the disc, with its value, and dims the other arcs. This replaced a system tooltip, which did not appear when tried by hand.
 - **Warnings** are shown in the arcs layout as a count in the middle of the disc, with the details on hover.
-- **A new theme variable, `--track`**, is the colour of the unfilled part of an arc.
+- **A new theme variable, `--track`**, is the color of the unfilled part of an arc.
 
-## Accent colour results
+## Accent color results
 
-Built on 2026-11-11 (D57). Checked from captures of the app's own window: the Orange preset on Frosted Round, a hand-written colour (`#ff3ea5`) on Frosted Compact, and a remembered Green taking precedence over Red in config on Frosted. The submenu itself needs a right-click and has not been checked by hand.
+Built on 2026-11-11 (D57). Checked from captures of the app's own window: the Orange preset on Frosted Round, a hand-written color (`#ff3ea5`) on Frosted Compact, and a remembered Green taking precedence over Red in config on Frosted. The submenu itself needs a right-click and has not been checked by hand.
 
 ## Phase 7 results: packaging
 
@@ -791,7 +804,7 @@ Not checked: installing on a second Mac, and `brew upgrade` picking up a later r
 
 Choices made in the cask and not previously agreed:
 
-- **Apple Silicon only**, and **macOS 13 (Ventura) or later**, which is the oldest release whose web view has the colour features the themes use. Neither has been tested on anything but this Mac.
+- **Apple Silicon only**, and **macOS 13 (Ventura) or later**, which is the oldest release whose web view has the color features the themes use. Neither has been tested on anything but this Mac.
 - **`brew uninstall --zap` removes `~/.config/excalibur`**; a plain uninstall leaves it.
 - **The quarantine flag is cleared with a `postflight_steps` block**, the form current Homebrew asks for.
 
@@ -827,6 +840,24 @@ Published on 2026-11-12, with the in-window explanation notes and the guides.
 Homebrew warned during the upgrade that the app's signer had changed and that macOS may prompt at the next launch. Each build's ad hoc signature is different, so this warning will come with every upgrade. The app opened when launched from a terminal straight afterwards; whether a prompt appeared on screen was not observed.
 
 Still not checked: an install on a second Mac.
+
+## After 0.1.1
+
+Recorded on 2026-11-13, from the user's reports and decisions.
+
+| Item | Result |
+|---|---|
+| Install on a second Mac | A friend of the user installed the app from the tap on their own Mac without trouble. This was the last unchecked part of phase 7. |
+| Prompt after the upgrade | macOS did not prompt when 0.1.1 was first opened, despite Homebrew's warning that the signer had changed. |
+| System accent while running (D58) | The window follows a change made in System Settings. |
+| Memory against Activity Monitor | The small difference reported in phase 4 is accepted as it is. |
+| Explanation notes on hover | Still not confirmed with a real pointer. |
+
+Put off: automatic release builds, and a per-plugin setting to pin a sparkline to its scale (D54 stays as it is).
+
+Next: a proper app icon to replace Tauri's default, and after it an item in the menu bar. A menu bar icon was excluded from the first version; what the item does will get its own decision when it is designed.
+
+The local branch `spike/phase1-window` was deleted. It was never pushed.
 
 ## Open questions
 

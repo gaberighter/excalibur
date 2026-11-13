@@ -17,7 +17,7 @@ pub struct State {
     /// in `config.toml`.
     pub theme: Option<String>,
     /// The accent last picked from the menu: a preset's id, or `theme` for
-    /// each theme's own colour. Takes precedence over `accent` in
+    /// each theme's own color. Takes precedence over `accent` in
     /// `config.toml`.
     pub accent: Option<String>,
 }

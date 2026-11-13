@@ -37,7 +37,7 @@ storage = 30.0
 | Setting | Default | Meaning |
 |---|---|---|
 | `theme` | `"frosted"` | The theme to start with, by its folder name. The built-in ones are `frosted`, `frosted-compact`, `frosted-round` and `plain`. |
-| `accent` | follows the system | The colour of sparklines and arcs: `blue`, `teal`, `green`, `yellow`, `orange`, `red`, `pink`, `purple` or `graphite`; `"system"` for the accent chosen in System Settings; `"theme"` for each theme's own colour; or any colour written like `"#ff8800"`. |
+| `accent` | follows the system | The color of sparklines and arcs: `blue`, `teal`, `green`, `yellow`, `orange`, `red`, `pink`, `purple` or `graphite`; `"system"` for the accent chosen in System Settings; `"theme"` for each theme's own color; or any color written like `"#ff8800"`. |
 | `interval` | `2.0` | Seconds between refreshes, for plugins that don't set their own. At least 0.1. |
 | `timeout` | `5.0` | Seconds before a plugin that is still running is stopped. |
 | `plugins` | the built-in order | The order of the rows. Plugins not listed follow in alphabetical order. |
