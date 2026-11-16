@@ -892,6 +892,18 @@ Next: a proper app icon to replace Tauri's default (done the same day, D62), and
 
 The local branch `spike/phase1-window` was deleted. It was never pushed.
 
+## Version 0.1.2
+
+Published on 2026-11-16, with the menu bar dock (D63), the app icon (D62), Plain's corner radius (D60) and American spelling (D61).
+
+| Check | Result |
+|---|---|
+| Release | `v0.1.2` on GitHub; the published file's checksum matches the local build. |
+| Bundle | The built app reports version 0.1.2 and carries the new icon file. |
+| Upgrade | `brew upgrade --cask excalibur` replaced 0.1.1 with 0.1.2 in `/Applications`, with no quarantine flag, and the app runs. |
+
+Not checked: how the new icon looks in Finder, and the dock in the installed app (it was tried by hand in a development build).
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.
