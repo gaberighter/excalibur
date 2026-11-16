@@ -637,7 +637,7 @@ Decided on 2026-11-16. The right-click menu gains "Dock to Menu Bar". When it is
 - **Only the icon hides it.** A shown window stays open and in front while other apps are used. Rejected: closing on a click elsewhere, as system panels do.
 - **Remembered** as `docked` in `state.toml`.
 
-Choices made while building it, not yet agreed:
+Choices made while building it, agreed on 2026-11-16:
 
 - **A right-click on the icon opens the same menu** as a right-click on the window. It is the only way to reach the menu, and Quit, while the window is hidden.
 - **The app starts with the window shown** when docked, as it does when floating. Whether it was hidden is not remembered.
@@ -645,7 +645,9 @@ Choices made while building it, not yet agreed:
 - **A released window goes to the bottom right corner** (D49).
 - **The icon is the app icon in one color** (`design/menubar-glyph.svg`), drawn by the system in black or white to suit the menu bar.
 
-Checked: launched docked, the window appears just below the menu bar, at the horizontal position the menu bar reports for the icon, and draws normally. Not checked, because none can be done from a terminal: what the icon looks like, clicking it, the menu from the icon, and docking and releasing from the menu.
+Checked: launched docked, the window appears just below the menu bar, at the horizontal position the menu bar reports for the icon, and draws normally. The user tried the rest by hand: the icon looks right, a click hides and shows the window, a right-click on the icon opens the menu, a docked window cannot be dragged, and a released one goes to its corner.
+
+**Corrected on 2026-11-16.** When first docked from the menu, the window jumped to the bottom left of the screen until the icon was clicked twice. A new menu bar item is reported at the bottom left with no height for a moment, then slides into place; the app took the first report. It now waits for a place that has a height and has stopped moving. Checked by docking a running app from a temporary test hook: the window lands under the icon. Tauri's own lookup of the screen at a point found none for the icon, so the screen is found by comparing bounds; this has only been tried with one screen.
 
 ## Phase 1 results
 

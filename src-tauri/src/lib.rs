@@ -220,7 +220,7 @@ fn resize(
     };
     // A docked window belongs on the screen its icon is on.
     let beside_icon = match icon {
-        Some(icon) => window.monitor_from_point(icon.x, icon.y)?,
+        Some(icon) => monitor_holding(window, icon)?,
         None => None,
     };
     let monitor = match (beside_icon, window.current_monitor()?) {
@@ -258,13 +258,27 @@ fn resize(
     ))
 }
 
+/// The screen that the middle of `icon` is on.
+fn monitor_holding(window: &WebviewWindow, icon: Area) -> tauri::Result<Option<tauri::Monitor>> {
+    let (x, y) = (icon.x + icon.width / 2.0, icon.y + icon.height / 2.0);
+    let holds = |monitor: &tauri::Monitor| {
+        let (start, size) = (monitor.position(), monitor.size());
+        let across = start.x as f64..start.x as f64 + size.width as f64;
+        let down = start.y as f64..start.y as f64 + size.height as f64;
+        across.contains(&x) && down.contains(&y)
+    };
+    Ok(window.available_monitors()?.into_iter().find(holds))
+}
+
 /// Where the menu bar item is on the screen, in physical pixels.
 fn icon_area(app: &AppHandle) -> Option<Area> {
     let rect = app.tray_by_id(TRAY_ID)?.rect().ok()??;
     // Already physical on macOS; the scale matters only for logical values.
     let position = rect.position.to_physical::<f64>(1.0);
     let size = rect.size.to_physical::<f64>(1.0);
-    (size.width > 0.0).then_some(Area {
+    // A new item is first reported in a corner of the screen with no
+    // height, before the menu bar has given it a place.
+    (size.width > 0.0 && size.height > 0.0).then_some(Area {
         x: position.x,
         y: position.y,
         width: size.width,
@@ -649,10 +663,14 @@ fn set_docked(app: &AppHandle, on: bool) {
     if on {
         // The menu bar takes a moment to give a new item its place.
         std::thread::spawn(move || {
+            // It slides in, so its place counts once it has stopped moving.
+            let mut last = None;
             for _ in 0..DOCK_ATTEMPTS {
-                if icon_area(window.app_handle()).is_some() {
+                let now = icon_area(window.app_handle());
+                if now.is_some() && now == last {
                     break;
                 }
+                last = now;
                 std::thread::sleep(DOCK_ATTEMPT_EVERY);
             }
             if let Err(e) = hang_under_icon(&window).and_then(|()| window.show()) {
@@ -674,7 +692,7 @@ fn set_docked(app: &AppHandle, on: bool) {
 }
 
 /// How long to wait for the menu bar to place a new item.
-const DOCK_ATTEMPTS: u32 = 20;
+const DOCK_ATTEMPTS: u32 = 40;
 const DOCK_ATTEMPT_EVERY: Duration = Duration::from_millis(50);
 
 fn on_menu_item(app: &AppHandle, id: &str) {
