@@ -20,6 +20,8 @@ pub struct State {
     /// each theme's own color. Takes precedence over `accent` in
     /// `config.toml`.
     pub accent: Option<String>,
+    /// Whether the window is docked to an icon in the menu bar (D63).
+    pub docked: bool,
 }
 
 impl State {
@@ -65,6 +67,7 @@ mod tests {
         let state = State {
             theme: Some("plain".into()),
             accent: None,
+            docked: true,
         };
         state.save(&file).unwrap();
         assert_eq!(State::load(&file), state);

@@ -47,6 +47,7 @@ The app has one piece of system-specific code of its own: reading the macOS acce
 | Window effects, set at run time | The native material behind a theme (D11, D30). |
 | Accessory activation policy, and `LSUIElement` in `Info.plist` | No Dock icon (D23). |
 | `withGlobalTauri: true` | Lets the page call the app without a bundler. |
+| `tray-icon` and `image-png` features | The menu bar item a docked window hangs from (D63). |
 
 ## Metric sources
 
@@ -72,7 +73,7 @@ Temperature and GPU were confirmed on a MacBook Air M2 only. On another Mac they
 | `theme.toml` | A theme's window settings: effect, radius, width, layout | D30, D50 |
 | `theme.css` | A theme's colors, fonts and spacing, as CSS custom properties | D19 |
 | `config.toml` | The user's settings; optional, and never written by the app | D35, D47, D57 |
-| `state.toml` | Written by the app: the theme and accent picked from the menu | D40, D57 |
+| `state.toml` | Written by the app: the theme and accent picked from the menu, and whether the window is docked | D40, D57, D63 |
 
 User files are in `~/.config/excalibur/` (D20). Built-in plugins and themes are inside the app, in `Contents/Resources` (D21). These formats are described for users in [docs/](docs/).
 

@@ -401,8 +401,11 @@ async function start() {
     invoke("show_menu");
   });
   // There is no title bar, so the whole window is the handle for moving it.
+  // A window docked to the menu bar stays under its icon.
+  let docked = await invoke("docked");
+  await listen("docked", ({ payload }) => (docked = payload));
   window.addEventListener("mousedown", (event) => {
-    if (event.button === 0) window.__TAURI__.window.getCurrentWindow().startDragging();
+    if (event.button === 0 && !docked) window.__TAURI__.window.getCurrentWindow().startDragging();
   });
   window.addEventListener("mousemove", (event) => showTip(tipFor(event.target), event.clientY));
   document.documentElement.addEventListener("mouseleave", () => showTip(""));

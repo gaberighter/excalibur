@@ -65,7 +65,7 @@ Portability to other operating systems is a bonus, not a first-version requireme
 - Battery metrics and a top-processes list.
 - Fill bars, and plugins that report more than one value.
 - Remembering window position and size.
-- A menu bar icon.
+- A menu bar icon. (Added after the first version, as an optional mode: D63.)
 - Code signing and notarization.
 - History persisted to disk, or looking back over hours or days.
 - Linux and Windows metric sources.

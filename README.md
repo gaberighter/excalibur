@@ -8,7 +8,8 @@ A small floating window for macOS that shows what your Mac is doing: CPU, memory
   <img src="docs/images/frosted-round.png" width="180" alt="The Frosted Round theme: a round window of concentric arcs">
 </p>
 
-- **Stays out of the way.** No Dock icon and no menu bar icon; a small window that floats above other windows and starts in the bottom right corner.
+- **Stays out of the way.** No Dock icon; a small window that floats above other windows and starts in the bottom right corner.
+- **Or lives in the menu bar.** Choose Dock to Menu Bar and the window hangs below an icon there; click the icon to hide or show it.
 - **Four built-in themes:** Frosted, Frosted Compact, Frosted Round and Plain.
 - **An accent color** that follows the one chosen in System Settings, or is picked from a menu.
 - **Plugins:** every metric is a small program that prints a number. Add your own by dropping a folder in place.
@@ -35,7 +36,8 @@ The app is not notarized by Apple. The cask clears the quarantine flag so that i
 Excalibur has no Dock icon, so everything is in its window.
 
 - **Move it:** drag the window anywhere. It returns to the bottom right corner the next time it starts.
-- **Right-click it** for the menu: themes, Accent Color, Reload Plugins, Open Config Folder and Quit Excalibur.
+- **Right-click it** for the menu: themes, Accent Color, Dock to Menu Bar, Reload Plugins, Open Config Folder and Quit Excalibur.
+- **Dock to Menu Bar** puts an icon in the menu bar and the window below it, where it can no longer be dragged. Click the icon to hide or show the window, and right-click the icon for the same menu. Choose the item again to let the window float.
 - **Point at a sparkline** to read an earlier value, or at an arc in the round window to see its full name.
 - **A dash in place of a value** means the metric could not be read; point at it for the reason. Temperature and GPU readings depend on the Mac.
 

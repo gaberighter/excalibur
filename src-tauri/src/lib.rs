@@ -16,7 +16,8 @@ use engine::{Engine, Event, Paths};
 use placement::Area;
 use serde::Serialize;
 use state::State;
-use tauri::menu::{CheckMenuItemBuilder, ContextMenu, MenuBuilder, SubmenuBuilder};
+use tauri::menu::{CheckMenuItemBuilder, ContextMenu, Menu, MenuBuilder, SubmenuBuilder};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::window::{EffectState, EffectsBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 use theme::Theme;
@@ -143,12 +144,15 @@ pub fn print_samples(duration: Duration) {
 const ENGINE_EVENT: &str = "engine";
 /// Sent to the window when the theme changes.
 const THEME_EVENT: &str = "theme";
+/// Sent to the window when it is docked to the menu bar or released.
+const DOCKED_EVENT: &str = "docked";
 /// Menu item ids for themes are this prefix followed by the theme's id.
 const THEME_ITEM_PREFIX: &str = "theme:";
 /// Menu item ids for accents are this prefix followed by the preset's id.
 const ACCENT_ITEM_PREFIX: &str = "accent:";
 /// The accent item that goes back to the color set in config.
 const ACCENT_FROM_CONFIG: &str = "config";
+const DOCK_ITEM: &str = "dock";
 const RELOAD_ITEM: &str = "reload";
 const OPEN_CONFIG_ITEM: &str = "open-config";
 const QUIT_ITEM: &str = "quit";
@@ -172,13 +176,32 @@ const CORNER_MARGIN: f64 = 16.0;
 /// no Dock icon and no window.
 const SHOW_ANYWAY_AFTER: Duration = Duration::from_secs(3);
 
-/// Whether the window has been put in its starting corner and shown.
+/// Gap between the menu bar and a window docked to it.
+const DOCK_GAP: f64 = 6.0;
+/// The id of the menu bar item.
+const TRAY_ID: &str = "main";
+/// The menu bar item's picture: black on transparent, which the system
+/// recolors for a light or a dark menu bar.
+const TRAY_ICON: &[u8] = include_bytes!("../icons/menubar.png");
+
+/// Whether the window has been put in its starting place and shown.
 #[derive(Default)]
 struct Placed(AtomicBool);
+
+/// Whether the window is docked to an icon in the menu bar (D63).
+struct Docked(AtomicBool);
+
+impl Docked {
+    fn get(&self) -> bool {
+        self.0.load(Ordering::SeqCst)
+    }
+}
 
 enum Position {
     /// The bottom right corner of the screen (D49).
     Corner,
+    /// Hanging below the menu bar item (D63).
+    UnderIcon,
     /// Where it is, moved only if part of it would be off the screen.
     Current,
 }
@@ -191,9 +214,18 @@ fn resize(
     position: Position,
 ) -> tauri::Result<()> {
     window.set_size(tauri::LogicalSize::new(width, height))?;
-    let monitor = match window.current_monitor()? {
-        Some(monitor) => monitor,
-        None => match window.primary_monitor()? {
+    let icon = match position {
+        Position::UnderIcon => icon_area(window.app_handle()),
+        _ => None,
+    };
+    // A docked window belongs on the screen its icon is on.
+    let beside_icon = match icon {
+        Some(icon) => window.monitor_from_point(icon.x, icon.y)?,
+        None => None,
+    };
+    let monitor = match (beside_icon, window.current_monitor()?) {
+        (Some(monitor), _) | (None, Some(monitor)) => monitor,
+        (None, None) => match window.primary_monitor()? {
             Some(monitor) => monitor,
             None => return Ok(()),
         },
@@ -210,6 +242,11 @@ fn resize(
     let size = (width * scale, height * scale);
     let (x, y) = match position {
         Position::Corner => placement::bottom_right(area, size, CORNER_MARGIN * scale),
+        Position::UnderIcon => match icon {
+            Some(icon) => placement::below(area, icon, size, DOCK_GAP * scale),
+            // The menu bar has not said where the icon is; it is on the right.
+            None => placement::top_right(area, size, DOCK_GAP * scale),
+        },
         Position::Current => {
             let current = window.outer_position()?;
             placement::keep_inside(area, (current.x as f64, current.y as f64), size)
@@ -221,12 +258,36 @@ fn resize(
     ))
 }
 
+/// Where the menu bar item is on the screen, in physical pixels.
+fn icon_area(app: &AppHandle) -> Option<Area> {
+    let rect = app.tray_by_id(TRAY_ID)?.rect().ok()??;
+    // Already physical on macOS; the scale matters only for logical values.
+    let position = rect.position.to_physical::<f64>(1.0);
+    let size = rect.size.to_physical::<f64>(1.0);
+    (size.width > 0.0).then_some(Area {
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height,
+    })
+}
+
+/// Where the window lives: under its icon when docked, and otherwise
+/// `floating`.
+fn home(app: &AppHandle, floating: Position) -> Position {
+    if app.state::<Docked>().get() {
+        Position::UnderIcon
+    } else {
+        floating
+    }
+}
+
 /// Makes the window tall enough for its content, so every row is visible
 /// however many plugins there are. The width is left alone.
 ///
 /// `content` is the height the page needs and `viewport` the height it has;
 /// the window grows or shrinks by the difference. The first call also puts
-/// the window in its starting corner and shows it, now that its size is known.
+/// the window in its starting place and shows it, now that its size is known.
 #[tauri::command]
 fn fit_height(
     window: WebviewWindow,
@@ -242,7 +303,8 @@ fn fit_height(
     let height = (current.height + content - viewport).clamp(MIN_WINDOW_HEIGHT, MAX_WINDOW_HEIGHT);
     let first = !placed.0.swap(true, Ordering::SeqCst);
     if first {
-        resize(&window, current.width, height, Position::Corner).map_err(|e| e.to_string())?;
+        let start = home(window.app_handle(), Position::Corner);
+        resize(&window, current.width, height, start).map_err(|e| e.to_string())?;
         return window.show().map_err(|e| e.to_string());
     }
     if (height - current.height).abs() < 1.0 {
@@ -356,7 +418,12 @@ fn apply_to_window(app: &AppHandle, theme: &Theme) -> tauri::Result<()> {
     window.set_effects(effects)?;
     let scale = window.scale_factor()?;
     let current = window.inner_size()?.to_logical::<f64>(scale);
-    resize(&window, theme.width, current.height, Position::Current)
+    resize(
+        &window,
+        theme.width,
+        current.height,
+        home(app, Position::Current),
+    )
 }
 
 /// Changes the theme while the app is running, and remembers the choice.
@@ -399,34 +466,43 @@ fn pick_accent(app: &AppHandle, picked: Option<String>) {
 /// Shows the right-click menu (D24). Themes are listed afresh each time, so
 /// a theme folder added while the app is running appears without a restart.
 #[tauri::command]
-fn show_menu(window: tauri::Window, state: tauri::State<ThemeState>) -> Result<(), String> {
+fn show_menu(window: tauri::Window) -> Result<(), String> {
+    let menu = build_menu(window.app_handle()).map_err(|e| e.to_string())?;
+    menu.popup(window).map_err(|e| e.to_string())
+}
+
+/// The menu shown by a right-click on the window and, when docked, on the
+/// menu bar item.
+fn build_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
+    let state = app.state::<ThemeState>();
     let current = state.current.lock().unwrap().theme.id.clone();
-    let mut menu = MenuBuilder::new(&window);
+    let mut menu = MenuBuilder::new(app);
     for theme in state.discover().themes {
         let item =
             CheckMenuItemBuilder::with_id(format!("{THEME_ITEM_PREFIX}{}", theme.id), &theme.name)
                 .checked(theme.id == current)
-                .build(&window)
-                .map_err(|e| e.to_string())?;
+                .build(app)?;
         menu = menu.item(&item);
     }
-    let accents = accent_menu(&window, &state).map_err(|e| e.to_string())?;
-    let menu = menu
-        .separator()
+    let accents = accent_menu(app, &state)?;
+    let dock = CheckMenuItemBuilder::with_id(DOCK_ITEM, "Dock to Menu Bar")
+        .checked(app.state::<Docked>().get())
+        .build(app)?;
+    menu.separator()
         .item(&accents)
+        .separator()
+        .item(&dock)
         .separator()
         .text(RELOAD_ITEM, "Reload Plugins")
         .text(OPEN_CONFIG_ITEM, "Open Config Folder")
         .separator()
         .text(QUIT_ITEM, "Quit Excalibur")
         .build()
-        .map_err(|e| e.to_string())?;
-    menu.popup(window).map_err(|e| e.to_string())
 }
 
 /// The accent colors, with the one in force ticked.
 fn accent_menu(
-    window: &tauri::Window,
+    app: &AppHandle,
     state: &ThemeState,
 ) -> tauri::Result<tauri::menu::Submenu<tauri::Wry>> {
     let choice = state.accent.lock().unwrap();
@@ -436,10 +512,10 @@ fn accent_menu(
     let item = |id: &str, name: &str, checked: bool| {
         CheckMenuItemBuilder::with_id(format!("{ACCENT_ITEM_PREFIX}{id}"), name)
             .checked(checked)
-            .build(window)
+            .build(app)
     };
 
-    let mut menu = SubmenuBuilder::new(window, "Accent Color").item(&item(
+    let mut menu = SubmenuBuilder::new(app, "Accent Color").item(&item(
         accent::THEME_DEFAULT,
         "Theme Default",
         !from_config && in_force == accent::THEME_DEFAULT,
@@ -482,8 +558,128 @@ fn open_config_folder(dir: &Path) {
     }
 }
 
+/// Whether the window is docked, for a window that has just loaded.
+#[tauri::command]
+fn docked(docked: tauri::State<Docked>) -> bool {
+    docked.get()
+}
+
+/// Puts the icon in the menu bar. A click on it hides or shows the window,
+/// and a right-click opens the menu, which is the only way to reach it while
+/// the window is hidden.
+fn add_tray(app: &AppHandle) -> tauri::Result<()> {
+    if app.tray_by_id(TRAY_ID).is_some() {
+        return Ok(());
+    }
+    TrayIconBuilder::with_id(TRAY_ID)
+        .icon(tauri::image::Image::from_bytes(TRAY_ICON)?)
+        .icon_as_template(true)
+        .tooltip("Excalibur")
+        .menu(&build_menu(app)?)
+        .show_menu_on_left_click(false)
+        .on_tray_icon_event(|tray, event| match event {
+            TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } => toggle_window(tray.app_handle()),
+            // The menu is fixed once it opens, so it is brought up to date
+            // as the pointer arrives: a theme folder may have been added.
+            TrayIconEvent::Enter { .. } => refresh_tray_menu(tray.app_handle()),
+            _ => {}
+        })
+        .build(app)?;
+    Ok(())
+}
+
+fn refresh_tray_menu(app: &AppHandle) {
+    let Some(tray) = app.tray_by_id(TRAY_ID) else {
+        return;
+    };
+    if let Err(e) = build_menu(app).and_then(|menu| tray.set_menu(Some(menu))) {
+        log::warn!("could not update the menu bar item's menu: {e}");
+    }
+}
+
+/// Moves the window to hang below the menu bar item, at its present size.
+fn hang_under_icon(window: &WebviewWindow) -> tauri::Result<()> {
+    let size = window
+        .inner_size()?
+        .to_logical::<f64>(window.scale_factor()?);
+    resize(window, size.width, size.height, Position::UnderIcon)
+}
+
+/// A click on the menu bar item: hides the window, or shows it under the
+/// icon, which may have moved since.
+fn toggle_window(app: &AppHandle) {
+    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
+        return;
+    };
+    let result = if window.is_visible().unwrap_or(false) {
+        window.hide()
+    } else {
+        hang_under_icon(&window).and_then(|()| window.show())
+    };
+    if let Err(e) = result {
+        log::warn!("could not hide or show the window: {e}");
+    }
+}
+
+/// Docks the window to the menu bar or releases it, and remembers the
+/// choice. A released window goes back to its corner (D49).
+fn set_docked(app: &AppHandle, on: bool) {
+    app.state::<Docked>().0.store(on, Ordering::SeqCst);
+    let state_file = &app.state::<ThemeState>().state_file;
+    if let Err(e) = State::update(state_file, |remembered| remembered.docked = on) {
+        log::warn!("could not remember whether the window is docked: {e}");
+    }
+    if on {
+        if let Err(e) = add_tray(app) {
+            log::warn!("could not add the menu bar item: {e}");
+        }
+    } else {
+        app.remove_tray_by_id(TRAY_ID);
+    }
+    if let Err(e) = app.emit(DOCKED_EVENT, on) {
+        log::warn!("could not tell the window it was docked or released: {e}");
+    }
+    let Some(window) = app.get_webview_window(MAIN_WINDOW) else {
+        return;
+    };
+    if on {
+        // The menu bar takes a moment to give a new item its place.
+        std::thread::spawn(move || {
+            for _ in 0..DOCK_ATTEMPTS {
+                if icon_area(window.app_handle()).is_some() {
+                    break;
+                }
+                std::thread::sleep(DOCK_ATTEMPT_EVERY);
+            }
+            if let Err(e) = hang_under_icon(&window).and_then(|()| window.show()) {
+                log::warn!("could not move the window under its icon: {e}");
+            }
+        });
+        return;
+    }
+    let placed = window
+        .inner_size()
+        .and_then(|size| {
+            let size = size.to_logical::<f64>(window.scale_factor()?);
+            resize(&window, size.width, size.height, Position::Corner)
+        })
+        .and_then(|()| window.show());
+    if let Err(e) = placed {
+        log::warn!("could not move the window back to its corner: {e}");
+    }
+}
+
+/// How long to wait for the menu bar to place a new item.
+const DOCK_ATTEMPTS: u32 = 20;
+const DOCK_ATTEMPT_EVERY: Duration = Duration::from_millis(50);
+
 fn on_menu_item(app: &AppHandle, id: &str) {
     match id {
+        DOCK_ITEM => set_docked(app, !app.state::<Docked>().get()),
         RELOAD_ITEM => app.state::<Engine>().reload(),
         OPEN_CONFIG_ITEM => open_config_folder(&app.state::<UserDir>().0),
         QUIT_ITEM => app.exit(0),
@@ -497,6 +693,7 @@ fn on_menu_item(app: &AppHandle, id: &str) {
             }
         }
     }
+    refresh_tray_menu(app);
 }
 
 /// `~/.config/excalibur`, or its override.
@@ -506,7 +703,7 @@ struct UserDir(PathBuf);
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            snapshot, fit_height, theme, show_menu
+            snapshot, fit_height, theme, show_menu, docked
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -529,7 +726,9 @@ pub fn run() {
             let (config, _) = Config::load(&user_dir.join(config::FILE_NAME));
             let state_file = user_dir.join(state::FILE_NAME);
             let remembered = State::load(&state_file);
+            let remembered_docked = remembered.docked;
             let wanted = remembered.theme.unwrap_or(config.theme);
+            app.manage(Docked(AtomicBool::new(remembered.docked)));
             let themes = ThemeState {
                 user: paths.user_themes(),
                 bundled: paths.bundled_themes,
@@ -547,6 +746,9 @@ pub fn run() {
             apply_to_window(app.handle(), &active.theme)?;
             *themes.current.lock().unwrap() = active;
             app.manage(themes);
+            if remembered_docked {
+                add_tray(app.handle())?;
+            }
 
             // The system's accent can change while the app runs. Nothing
             // announces it in a portable way, so it is read again now and then.

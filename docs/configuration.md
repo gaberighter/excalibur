@@ -11,7 +11,7 @@ Your files live in `~/.config/excalibur/`:
 | `config.toml` | Your settings. Excalibur never changes this file. |
 | `plugins/` | Plugins of your own; see [plugins.md](plugins.md). |
 | `themes/` | Themes of your own; see [themes.md](themes.md). |
-| `state.toml` | Written by Excalibur: the theme and accent last picked from the menu. |
+| `state.toml` | Written by Excalibur: the theme and accent last picked from the menu, and whether the window is docked to the menu bar. |
 
 Choose **Open Config Folder** from the window's right-click menu. If the folder does not exist, it is created with empty `plugins` and `themes` folders and a `config.toml` in which every setting is present but commented out. Until then, Excalibur writes nothing to your home folder, apart from `state.toml` the first time you pick a theme or accent.
 

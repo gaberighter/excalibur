@@ -70,6 +70,7 @@ All entries below were decided on 2026-11-11.
 | D60 | Plain theme | Corner radius 12, the same as Frosted |
 | D61 | Spelling | American spelling everywhere: the app, the documents and the code |
 | D62 | App icon | A sword whose guard is a line of readings, on a dark rounded square |
+| D63 | Menu bar dock | An optional mode: an icon in the menu bar, with the window hanging below it; a click hides or shows it |
 
 ## Details
 
@@ -626,6 +627,25 @@ Decided on 2026-11-13, from four drawn options. A pale sword points down on a da
 - **Master drawing:** `design/icon.svg`. The files in `src-tauri/icons/` are generated from it: `rsvg-convert -w 1024` to a PNG, then `cargo tauri icon`. That command also writes Android and iOS folders, which are deleted.
 - **A one-color version** for the planned menu bar item is `design/menubar-glyph.svg`. Nothing uses it yet.
 - **Checked:** the generated `icon.icns`, unpacked, holds the new drawing at every size from 16 to 1024. Not checked: the icon on an installed app, which needs a release.
+
+### D63. The window can be docked to an icon in the menu bar
+
+Decided on 2026-11-16. The right-click menu gains "Dock to Menu Bar". When it is ticked, an icon appears in the menu bar, the window hangs directly below it, and a click on the icon hides or shows the window. Amends D23 and D24, which rejected a menu bar icon for the first version.
+
+- **A mode, off by default.** Without it the app is as before, with no menu bar icon. Rejected: an icon that is always there.
+- **Under the icon.** A docked window is centered below the icon and cannot be dragged. Rejected: leaving the window where it was and using the icon only to hide and show it.
+- **Only the icon hides it.** A shown window stays open and in front while other apps are used. Rejected: closing on a click elsewhere, as system panels do.
+- **Remembered** as `docked` in `state.toml`.
+
+Choices made while building it, not yet agreed:
+
+- **A right-click on the icon opens the same menu** as a right-click on the window. It is the only way to reach the menu, and Quit, while the window is hidden.
+- **The app starts with the window shown** when docked, as it does when floating. Whether it was hidden is not remembered.
+- **Readings continue while the window is hidden,** so the sparklines are full when it is shown again. The cost is the same as when it is visible.
+- **A released window goes to the bottom right corner** (D49).
+- **The icon is the app icon in one color** (`design/menubar-glyph.svg`), drawn by the system in black or white to suit the menu bar.
+
+Checked: launched docked, the window appears just below the menu bar, at the horizontal position the menu bar reports for the icon, and draws normally. Not checked, because none can be done from a terminal: what the icon looks like, clicking it, the menu from the icon, and docking and releasing from the menu.
 
 ## Phase 1 results
 

@@ -20,6 +20,23 @@ pub fn bottom_right(area: Area, size: (f64, f64), margin: f64) -> (f64, f64) {
     keep_inside(area, position, size)
 }
 
+/// The top-left position that hangs a window of `size` below `anchor`,
+/// centered on it and `gap` away, without leaving `area`.
+pub fn below(area: Area, anchor: Area, size: (f64, f64), gap: f64) -> (f64, f64) {
+    let position = (
+        anchor.x + anchor.width / 2.0 - size.0 / 2.0,
+        anchor.y + anchor.height + gap,
+    );
+    keep_inside(area, position, size)
+}
+
+/// The top-left position that puts a window of `size` in the top right
+/// corner of `area`, `margin` away from its edges.
+pub fn top_right(area: Area, size: (f64, f64), margin: f64) -> (f64, f64) {
+    let position = (area.x + area.width - size.0 - margin, area.y + margin);
+    keep_inside(area, position, size)
+}
+
 /// Moves a window as little as needed for all of it to be inside `area`.
 /// A window larger than the area is aligned to the area's top-left.
 pub fn keep_inside(area: Area, position: (f64, f64), size: (f64, f64)) -> (f64, f64) {
@@ -58,6 +75,33 @@ mod tests {
             height: 600.0,
         };
         assert_eq!(bottom_right(second, (200.0, 300.0), 0.0), (1600.0, 100.0));
+    }
+
+    #[test]
+    fn below_centers_the_window_under_the_anchor() {
+        let icon = Area {
+            x: 500.0,
+            y: 0.0,
+            width: 40.0,
+            height: 25.0,
+        };
+        assert_eq!(below(SCREEN, icon, (200.0, 300.0), 6.0), (420.0, 31.0));
+    }
+
+    #[test]
+    fn below_an_anchor_near_the_edge_stays_on_the_screen() {
+        let icon = Area {
+            x: 950.0,
+            y: 0.0,
+            width: 40.0,
+            height: 25.0,
+        };
+        assert_eq!(below(SCREEN, icon, (200.0, 300.0), 6.0), (800.0, 31.0));
+    }
+
+    #[test]
+    fn top_right_leaves_a_margin_from_both_edges() {
+        assert_eq!(top_right(SCREEN, (200.0, 300.0), 20.0), (780.0, 45.0));
     }
 
     #[test]
