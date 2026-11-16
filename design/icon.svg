@@ -33,6 +33,5 @@
     <circle cx="0" cy="0" r="31" fill="url(#hilt)"/>
   </g>
   <!-- Its guard: a line of readings. -->
-  <polyline points="226,378 330,378 372,304 424,440 462,378 562,378 600,316 652,452 694,378 798,378" fill="none" stroke="#1a1c21" stroke-opacity="0.35" stroke-width="46" stroke-linejoin="round" stroke-linecap="round"/>
   <polyline points="226,378 330,378 372,304 424,440 462,378 562,378 600,316 652,452 694,378 798,378" fill="none" stroke="#8ab8ff" stroke-width="30" stroke-linejoin="round" stroke-linecap="round"/>
 </svg>
