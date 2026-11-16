@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent color added along the way (results for each are in `decisions.md`). Version 0.1.1 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. A friend of the user has installed it on a second Mac. Put off: automatic release builds. Next: a proper app icon, then an item in the menu bar (see "After 0.1.1" in `decisions.md`).
+All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent color added along the way (results for each are in `decisions.md`). Version 0.1.1 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. A friend of the user has installed it on a second Mac. Put off: automatic release builds. Changes since 0.1.1 that are not in a release yet: the app icon (D62), American spelling (D61) and Plain's corner radius (D60). Next: an item in the menu bar, not yet designed (see "After 0.1.1" in `decisions.md`).
 
 ## Commands
 
@@ -35,6 +35,8 @@ Finding its own files: `app_paths` in `lib.rs`. The packaged app has its plugins
 
 Window and menu, all in `lib.rs`: the window is created hidden and `fit_height` shows it on its first call, after sizing it and placing it in the corner (`placement.rs` is the geometry). The page must not call `fit_height` before both the theme and the rows are in place, or the window is placed for the wrong height. System tooltips (`title`) do not appear on this window, because it is rarely the active one; explanations go in a `data-tip` attribute, which `main.js` shows in `#tip`, a note drawn inside the window. The page's surface is painted on `#panel`, never on `<body>`, because a body background spreads to the whole transparent window and fills in the rounded corners. `state.rs` is `state.toml` (the theme picked from the menu); `scaffold.rs` creates the user's folder from `config.template.toml` when Open Config Folder is chosen.
 
+The app icon (D62): the master drawing is `design/icon.svg`, and `src-tauri/icons/` is generated from it with `rsvg-convert -w 1024 design/icon.svg -o <png>` followed by `cargo tauri icon <png>`; delete the `android/` and `ios/` folders and `64x64.png` that the command adds. `design/menubar-glyph.svg` is the one-color version for the planned menu bar item.
+
 Checking the window by eye, without asking the user: launch with `cargo tauri dev`, find the window id of the process named `excalibur` through `CGWindowListCopyWindowInfo` (a few lines of Swift), and capture only that window with `screencapture -l <id>`. Capture the app's window only, never the whole screen. Right-clicks cannot be sent from a terminal, so anything behind the menu needs the user. Layout alone can also be checked by rendering `ui/` in a headless Chromium-based browser with `window.__TAURI__` stubbed.
 
 The project, Excalibur, is a small floating desktop window for macOS (Apple Silicon first) that shows system metrics: CPU, memory, storage, temperature, network and GPU. Its working name was `stats_gui`, which is still the name of the local folder (D42).
@@ -42,7 +44,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D61) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D62) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, as built.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 

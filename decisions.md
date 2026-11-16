@@ -69,6 +69,7 @@ All entries below were decided on 2026-11-11.
 | D59 | Default accent | A fresh install starts on System Accent |
 | D60 | Plain theme | Corner radius 12, the same as Frosted |
 | D61 | Spelling | American spelling everywhere: the app, the documents and the code |
+| D62 | App icon | A sword whose guard is a line of readings, on a dark rounded square |
 
 ## Details
 
@@ -616,6 +617,16 @@ Decided on 2026-11-13. The menu already said "Accent Color", to match macOS, whi
 - **Rejected:** British spelling in the menu, which would not match the system's own menus.
 - **Nothing a user can set was renamed.** No manifest field, config setting or theme property contained one of the changed words.
 
+### D62. The app icon: a sword with a line of readings for its guard
+
+Decided on 2026-11-13, from four drawn options. A pale sword points down on a dark rounded square, and a blue line of readings crosses it where the guard would be. It replaces Tauri's default icon.
+
+- **Rejected:** the round theme's arcs as a gauge with the sword as its needle (it looked like a power button); the sword standing in the peak of a sparkline; the arcs alone, with no sword.
+- **The blue is fixed** (`#8ab8ff`, the Frosted theme's own line color). An icon is a file, so it cannot follow the accent color.
+- **Master drawing:** `design/icon.svg`. The files in `src-tauri/icons/` are generated from it: `rsvg-convert -w 1024` to a PNG, then `cargo tauri icon`. That command also writes Android and iOS folders, which are deleted.
+- **A one-color version** for the planned menu bar item is `design/menubar-glyph.svg`. Nothing uses it yet.
+- **Checked:** the generated `icon.icns`, unpacked, holds the new drawing at every size from 16 to 1024. Not checked: the icon on an installed app, which needs a release.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
@@ -855,7 +866,7 @@ Recorded on 2026-11-13, from the user's reports and decisions.
 
 Put off: automatic release builds, and a per-plugin setting to pin a sparkline to its scale (D54 stays as it is).
 
-Next: a proper app icon to replace Tauri's default, and after it an item in the menu bar. A menu bar icon was excluded from the first version; what the item does will get its own decision when it is designed.
+Next: a proper app icon to replace Tauri's default (done the same day, D62), and after it an item in the menu bar. A menu bar icon was excluded from the first version; what the item does will get its own decision when it is designed.
 
 The local branch `spike/phase1-window` was deleted. It was never pushed.
 
