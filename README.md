@@ -8,7 +8,7 @@ A small floating window for macOS that shows what your Mac is doing: CPU, memory
   <img src="docs/images/frosted-round.png" width="180" alt="The Frosted Round theme: a round window of concentric arcs">
 </p>
 
-- **Stays out of the way.** No Dock icon; a small window that floats above other windows and starts in the bottom right corner.
+- **Stays out of the way.** No Dock icon; a small window that floats above other windows, on every desktop and over apps in full screen, and starts in the bottom right corner.
 - **Or lives in the menu bar.** Choose Dock to Menu Bar and the window hangs below an icon there; click the icon to hide or show it.
 - **Four built-in themes:** Frosted, Frosted Compact, Frosted Round and Plain.
 - **An accent color** that follows the one chosen in System Settings, or is picked from a menu.

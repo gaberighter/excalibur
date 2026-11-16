@@ -43,6 +43,7 @@ The app has one piece of system-specific code of its own: reading the macOS acce
 | `macOSPrivateApi: true` | Required for transparent windows on macOS. Rules out the Mac App Store, which is not a goal (D13). |
 | `decorations: false` | No title bar (D23). The page starts a window drag on mouse-down. |
 | `alwaysOnTop: true` | The window floats above others (D48). |
+| `visibleOnAllWorkspaces: true`, and full-screen auxiliary set in `spaces.rs` | The window is on every desktop and over apps in full screen (D64). |
 | `visible: false` | The window is shown once its size and corner are known (D49). |
 | Window effects, set at run time | The native material behind a theme (D11, D30). |
 | Accessory activation policy, and `LSUIElement` in `Info.plist` | No Dock icon (D23). |

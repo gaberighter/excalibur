@@ -7,6 +7,7 @@ pub mod accent;
 pub mod engine;
 pub mod placement;
 pub mod scaffold;
+pub mod spaces;
 pub mod state;
 pub mod system_accent;
 pub mod theme;
@@ -734,6 +735,13 @@ pub fn run() {
             // No Dock icon and no entry in the app switcher (D23).
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
+            // On every Space, and beside an app in full screen (D64).
+            if let Some(window) = app.get_webview_window(MAIN_WINDOW)
+                && let Err(e) = spaces::allow_beside_full_screen(&window)
+            {
+                log::warn!("could not let the window sit beside full-screen apps: {e}");
+            }
 
             let paths = app_paths(app.path().resource_dir().ok());
             let user_dir = paths.engine.user_dir.clone();

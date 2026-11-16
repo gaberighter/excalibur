@@ -788,6 +788,7 @@ dependencies = [
  "core-foundation-sys",
  "libc",
  "log",
+ "objc2-app-kit",
  "serde",
  "serde_json",
  "tauri",

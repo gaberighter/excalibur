@@ -71,6 +71,7 @@ All entries below were decided on 2026-11-11.
 | D61 | Spelling | American spelling everywhere: the app, the documents and the code |
 | D62 | App icon | A sword whose guard is a line of readings, on a dark rounded square |
 | D63 | Menu bar dock | An optional mode: an icon in the menu bar, with the window hanging below it; a click hides or shows it |
+| D64 | Spaces | The window is on every desktop, and over apps in full screen |
 
 ## Details
 
@@ -649,6 +650,15 @@ Checked: launched docked, the window appears just below the menu bar, at the hor
 
 **Corrected on 2026-11-16.** When first docked from the menu, the window jumped to the bottom left of the screen until the icon was clicked twice. A new menu bar item is reported at the bottom left with no height for a moment, then slides into place; the app took the first report. It now waits for a place that has a height and has stopped moving. Checked by docking a running app from a temporary test hook: the window lands under the icon. Tauri's own lookup of the screen at a point found none for the icon, so the screen is found by comparing bounds; this has only been tried with one screen.
 
+### D64. The window is on every desktop, and over apps in full screen
+
+Decided on 2026-11-17, from a problem the user reported: with another app in full screen, the window did not appear, floating or docked, not even when the menu bar icon was clicked. macOS keeps a window on the one desktop (Space) it opened on, and keeps windows off a full-screen app's Space unless they are marked to join it.
+
+- **What changed:** the window joins every Space (`visibleOnAllWorkspaces` in `tauri.conf.json`) and is marked as auxiliary to full-screen apps, so it can sit over them.
+- **OS-specific code in the app.** Tauri has no setting for the second part, so `spaces.rs` sets it on the native window. This is the second exception to keeping macOS code out of the app, after `system_accent.rs` (D58). Other systems get nothing there.
+- **Not yet agreed:** the window now also follows from one ordinary desktop to the next, not only onto full-screen apps. The alternative considered was to bring it only to the Space in use when it is shown from the menu bar icon.
+- **Checked:** in a development build the window carries both settings and still draws in its corner, always in front. Not checked: over an app actually in full screen, which needs the user.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
@@ -902,7 +912,9 @@ Published on 2026-11-16, with the menu bar dock (D63), the app icon (D62), Plain
 | Bundle | The built app reports version 0.1.2 and carries the new icon file. |
 | Upgrade | `brew upgrade --cask excalibur` replaced 0.1.1 with 0.1.2 in `/Applications`, with no quarantine flag, and the app runs. |
 
-Not checked: how the new icon looks in Finder, and the dock in the installed app (it was tried by hand in a development build).
+Not checked at release: how the new icon looks in Finder, and the dock in the installed app. Both were confirmed by the user on 2026-11-17: the icon looks right, and docking from the menu puts the window straight under the icon.
+
+On the same day the user set aside the in-window explanation notes added in 0.1.1, which are still unconfirmed with a real pointer, and postponed versions for other systems until the known macOS problems are fixed.
 
 ## Open questions
 

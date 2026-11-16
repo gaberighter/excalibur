@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent color added along the way (results for each are in `decisions.md`). Version 0.1.2 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. A friend of the user has installed it on a second Mac. Put off: automatic release builds.
+All phases (0–8) of `implementation_plan.md` are built, plus the compact and round layouts and the accent color added along the way (results for each are in `decisions.md`). Version 0.1.2 is published and installable with `brew install --cask gaberighter/tap/excalibur`. User documentation is `README.md` and `docs/` (configuration, plugins, themes); keep it in step with the code, and try any example you change. A friend of the user has installed it on a second Mac. Put off: automatic release builds, and versions for other systems until the known macOS problems are fixed.
 
 ## Commands
 
@@ -46,7 +46,7 @@ The project, Excalibur, is a small floating desktop window for macOS (Apple Sili
 ## Source of truth
 
 - `project_scope.md`: the problem, the solution and what is out of scope for the first version.
-- `decisions.md`: numbered decisions (D1–D63) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
+- `decisions.md`: numbered decisions (D1–D64) with what was rejected and why, plus open questions (O-numbers). Read the relevant entries before implementing anything they cover.
 - `stack.md`: the stack, as built.
 - `implementation_plan.md`: the build order in phases 0–8, each with a "done when" check. Phase 1 (risk prototypes) must finish before the plugin interface is built on.
 
@@ -84,7 +84,7 @@ Command lookup (D38): a bare `command` name in a manifest is resolved in the plu
 - **Never require sudo** or prompt for a password.
 - **No persistence of readings.** History is in memory only and is lost on quit by design.
 - **Do not special-case built-in metrics.** If a built-in needs something the plugin interface cannot express, extend the interface.
-- **Keep OS-specific code out of the app, frontend, plugin interface and themes.** The one exception is `src-tauri/src/system_accent.rs`, which reads the macOS accent color, because the page cannot (web content gets a fixed blue for `AccentColor`).
+- **Keep OS-specific code out of the app, frontend, plugin interface and themes.** The exceptions are `src-tauri/src/system_accent.rs`, which reads the macOS accent color, because the page cannot (web content gets a fixed blue for `AccentColor`), and `src-tauri/src/spaces.rs`, which lets the window sit over full-screen apps, which Tauri has no setting for (D64).
 - **First version exclusions:** fill bars, multi-value plugins (network is two plugins, `net-down` and `net-up`), remembered window position, code signing.
 
 ## Phase 1 findings worth knowing
