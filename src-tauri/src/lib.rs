@@ -720,7 +720,8 @@ struct UserDir(PathBuf);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    #[cfg_attr(not(target_os = "macos"), allow(unused_mut))]
+    let mut app = tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             snapshot, fit_height, theme, show_menu, docked
         ])
@@ -732,10 +733,6 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            // No Dock icon and no entry in the app switcher (D23).
-            #[cfg(target_os = "macos")]
-            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
-
             // On every Space, and beside an app in full screen (D64).
             if let Some(window) = app.get_webview_window(MAIN_WINDOW)
                 && let Err(e) = spaces::allow_beside_full_screen(&window)
@@ -817,6 +814,13 @@ pub fn run() {
             Ok(())
         })
         .on_menu_event(|app, event| on_menu_item(app, event.id().as_ref()))
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while building tauri application");
+    // No Dock icon and no entry in the app switcher (D23). Set before the
+    // app runs, so it is in force when the window is created: a window made
+    // while the app is still an ordinary one can never go over full-screen
+    // apps (D64).
+    #[cfg(target_os = "macos")]
+    app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+    app.run(|_, _| {});
 }

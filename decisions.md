@@ -659,6 +659,19 @@ Decided on 2026-11-17, from a problem the user reported: with another app in ful
 - **Not yet agreed:** the window now also follows from one ordinary desktop to the next, not only onto full-screen apps. The alternative considered was to bring it only to the Space in use when it is shown from the menu bar icon.
 - **Checked:** in a development build the window carries both settings and still draws in its corner, always in front. Not checked: over an app actually in full screen, which needs the user.
 
+**Corrected on 2026-11-17.** The user tried it in a development build: the window still did not appear over a full-screen app, from the menu bar icon or otherwise. With the user's permission, a test program put a blank window in full screen and checked which windows were on screen there:
+
+| Tried | Over the full-screen app |
+|---|---|
+| The two settings above (Excalibur) | No |
+| Plus a panel style, or a higher window level, or both (Excalibur) | No. The panel style is silently dropped when added to an existing window. |
+| A minimal window with the two settings, in an app that is menu-bar style from the start | Yes, as a plain window and as a panel |
+| The same minimal window, in an app that becomes menu-bar style only after the window exists | No |
+
+The cause was the order of things at launch. The app hides its Dock icon by becoming a menu-bar-style app (D23), and it did so in its setup step, which Tauri runs after it has created the window. macOS never lets a window made while its app was still an ordinary one go over full-screen apps. The style is now set before the app runs, so it is in force when the window is created. The installed app also starts as menu-bar style because of `LSUIElement` in its `Info.plist`, so the first fix might have been enough there; that was not tried.
+
+Checked with the same test program after the change, in a development build: the window is on screen over the full-screen app and draws normally, both floating and docked, and the app is still menu-bar style (no Dock icon). Not checked: clicking the menu bar icon while in full screen, and moving between ordinary desktops; the window being on the full-screen app's Space is the same setting at work.
+
 ## Phase 1 results
 
 Prototypes run on the MacBook Air M2 (macOS 27.2) on 2026-11-11.
