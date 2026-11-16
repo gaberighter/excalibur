@@ -929,6 +929,18 @@ Not checked at release: how the new icon looks in Finder, and the dock in the in
 
 On the same day the user set aside the in-window explanation notes added in 0.1.1, which are still unconfirmed with a real pointer, and postponed versions for other systems until the known macOS problems are fixed.
 
+## Version 0.1.3
+
+Published on 2026-11-17, with the window over full-screen apps and on every desktop (D64), which the user had confirmed by hand in a development build.
+
+| Check | Result |
+|---|---|
+| Release | `v0.1.3` on GitHub; the published file's checksum matches the local build. |
+| Bundle | The built app reports version 0.1.3 and has `LSUIElement` set. |
+| Upgrade | `brew upgrade --cask excalibur` replaced 0.1.2 with 0.1.3 in `/Applications`, with no quarantine flag; the app runs as a menu-bar-style app (no Dock icon). |
+
+Not checked: the installed 0.1.3 over a full-screen app.
+
 ## Open questions
 
 None. O1–O19 are all resolved: O1–O16 by D14–D35, O17 by D46, O18 by D45 and O19 by D47.
