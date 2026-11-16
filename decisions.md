@@ -656,7 +656,7 @@ Decided on 2026-11-17, from a problem the user reported: with another app in ful
 
 - **What changed:** the window joins every Space (`visibleOnAllWorkspaces` in `tauri.conf.json`) and is marked as auxiliary to full-screen apps, so it can sit over them.
 - **OS-specific code in the app.** Tauri has no setting for the second part, so `spaces.rs` sets it on the native window. This is the second exception to keeping macOS code out of the app, after `system_accent.rs` (D58). Other systems get nothing there.
-- **Not yet agreed:** the window now also follows from one ordinary desktop to the next, not only onto full-screen apps. The alternative considered was to bring it only to the Space in use when it is shown from the menu bar icon.
+- **The window also follows from one ordinary desktop to the next,** not only onto full-screen apps. Agreed on 2026-11-17, when the user tried it. The alternative considered was to bring it only to the Space in use when it is shown from the menu bar icon.
 - **Checked:** in a development build the window carries both settings and still draws in its corner, always in front. Not checked: over an app actually in full screen, which needs the user.
 
 **Corrected on 2026-11-17.** The user tried it in a development build: the window still did not appear over a full-screen app, from the menu bar icon or otherwise. With the user's permission, a test program put a blank window in full screen and checked which windows were on screen there:
@@ -670,7 +670,7 @@ Decided on 2026-11-17, from a problem the user reported: with another app in ful
 
 The cause was the order of things at launch. The app hides its Dock icon by becoming a menu-bar-style app (D23), and it did so in its setup step, which Tauri runs after it has created the window. macOS never lets a window made while its app was still an ordinary one go over full-screen apps. The style is now set before the app runs, so it is in force when the window is created. The installed app also starts as menu-bar style because of `LSUIElement` in its `Info.plist`, so the first fix might have been enough there; that was not tried.
 
-Checked with the same test program after the change, in a development build: the window is on screen over the full-screen app and draws normally, both floating and docked, and the app is still menu-bar style (no Dock icon). Not checked: clicking the menu bar icon while in full screen, and moving between ordinary desktops; the window being on the full-screen app's Space is the same setting at work.
+Checked with the same test program after the change, in a development build: the window is on screen over the full-screen app and draws normally, both floating and docked, and the app is still menu-bar style (no Dock icon). Not checked: clicking the menu bar icon while in full screen, and moving between ordinary desktops; the window being on the full-screen app's Space is the same setting at work. The user then tried it by hand and confirmed it works.
 
 ## Phase 1 results
 
